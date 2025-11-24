@@ -1,6 +1,13 @@
 spring:
   application:
     name: zerocode-backend
+  # mysql
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/zerocode
+    username: root
+    password: 123456
+
 server:
   port: 8123
   servlet:
@@ -11,8 +18,13 @@ springdoc:
   group-configs:
     - group: 'default'
       packages-to-scan: com.xm.zerocodebackend.controller
+
 # knife4j
 knife4j:
   enable: true
   setting:
     language: zh_cn
+
+xm:
+  zerocode:
+    salt: xm.zerocode.25-11-24.KW7ZXQ

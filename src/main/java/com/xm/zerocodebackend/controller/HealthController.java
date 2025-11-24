@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 健康控制器
  *
- * @author X1aoM1ngTX
+ * @author <a href="https://github.com/X1aoM1ngTX">X1aoM1ngTX</a>
  */
-@Tag(name = "健康接口", description = "系统健康检查服务")
+@Tag(name = "Health", description = "系统健康检查服务")
 @RestController
 @RequestMapping("/health")
 public class HealthController {
