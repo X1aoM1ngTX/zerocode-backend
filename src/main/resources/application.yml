@@ -1,6 +1,8 @@
 spring:
   application:
     name: zerocode-backend
+  profiles:
+    active: dev
   # mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

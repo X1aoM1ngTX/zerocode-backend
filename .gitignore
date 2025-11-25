@@ -35,3 +35,6 @@ build/
 ### Application Configs ###
 application-prod.yml
 application-dev.yml
+
+### custom ###
+tmp

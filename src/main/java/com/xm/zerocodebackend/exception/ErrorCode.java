@@ -78,7 +78,9 @@ public enum ErrorCode {
     REDIS_KEY_TYPE_ERROR(50605, "键类型错误", "Redis中的键类型错误"),
     REDIS_MEMORY_ERROR(50606, "内存不足", "Redis内存不足"),
     REDIS_PERSISTENCE_ERROR(50607, "持久化错误", "Redis持久化失败"),
-    REDIS_LOCK_ERROR(50608, "分布式锁错误", "Redis分布式锁操作失败");
+    REDIS_LOCK_ERROR(50608, "分布式锁错误", "Redis分布式锁操作失败"),
+
+    UNSUPPORTED_TYPE(50700, "不支持的类型", "不支持的文件类型");
 
     private final int errorCode;
     private final String message;
