@@ -13,9 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * @author <a href="https://github.com/X1aoM1ngTX">X1aoM1ngTX</a>
  */
-@Tag(name = "Health", description = "系统健康检查服务")
+
 @RestController
 @RequestMapping("/health")
+@Tag(name = "Health", description = "系统健康检查服务")
 public class HealthController {
 
     @Operation(summary = "健康检查", description = "检查服务是否正常运行")

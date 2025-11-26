@@ -29,6 +29,7 @@ import com.xm.zerocodebackend.model.vo.UserVO;
 import com.xm.zerocodebackend.service.UserService;
 
 import cn.hutool.core.bean.BeanUtil;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,9 +42,9 @@ import java.util.List;
  *
  * @author <a href="https://github.com/X1aoM1ngTX">X1aoM1ngTX</a>
  */
-@Tag(name = "User", description = "用户服务")
 @RestController
 @RequestMapping("/user")
+@Tag(name = "User", description = "用户服务")
 public class UserController {
 
     @Resource
@@ -53,6 +54,7 @@ public class UserController {
      * 用户注册
      */
     @PostMapping("register")
+    @Operation(summary = "用户注册", description = "用户注册")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
         String userAccount = userRegisterRequest.getUserAccount();
@@ -66,6 +68,7 @@ public class UserController {
      * 用户登录
      */
     @PostMapping("/login")
+    @Operation(summary = "用户登录", description = "用户登录")
     public BaseResponse<LoginUserVO> userLogin(@RequestBody UserLoginRequest userLoginRequest,
             HttpServletRequest request) {
         ThrowUtils.throwIf(userLoginRequest == null, ErrorCode.PARAMS_ERROR);
@@ -79,6 +82,7 @@ public class UserController {
      * 获取当前登录用户
      */
     @GetMapping("/get/login")
+    @Operation(summary = "获取当前登录用户", description = "获取当前登录用户")
     public BaseResponse<LoginUserVO> getLoginUser(HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         return ResultUtils.success(userService.getLoginUserVO(loginUser));
@@ -87,7 +91,8 @@ public class UserController {
     /**
      * 创建用户
      */
-    @PostMapping("/add")
+    @PostMapping("admin/add")
+    @Operation(summary = "创建用户", description = "创建用户")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest) {
         ThrowUtils.throwIf(userAddRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空", "请检查请求参数");
@@ -105,7 +110,8 @@ public class UserController {
     /**
      * 根据 id 获取用户（仅管理员）
      */
-    @GetMapping("/get")
+    @GetMapping("admin/get")
+    @Operation(summary = "根据 ID 获取用户（仅管理员）", description = "根据 ID 获取用户（仅管理员）")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<User> getUserById(long id) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR, "用户 ID 不合法", "用户 ID 不合法，请检查用户 ID");
@@ -117,7 +123,8 @@ public class UserController {
     /**
      * 根据 id 获取包装类
      */
-    @GetMapping("/get/vo")
+    @GetMapping("get")
+    @Operation(summary = "根据 ID 获取用户包装类", description = "根据 ID 获取用户包装类")
     public BaseResponse<UserVO> getUserVOById(long id) {
         BaseResponse<User> response = getUserById(id);
         User user = response.getData();
@@ -126,10 +133,9 @@ public class UserController {
 
     /**
      * 分页获取用户封装列表（仅管理员）
-     *
-     * @param userQueryRequest 查询请求参数
      */
-    @PostMapping("/list/page/vo")
+    @PostMapping("admin/list/users")
+    @Operation(summary = "分页获取用户封装列表（仅管理员）", description = "分页获取用户封装列表（仅管理员）")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Page<UserVO>> listUserVOByPage(@RequestBody UserQueryRequest userQueryRequest) {
         ThrowUtils.throwIf(userQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空", "请求参数为空,请检查请求参数");
@@ -147,7 +153,8 @@ public class UserController {
     /**
      * 更新用户
      */
-    @PostMapping("/update")
+    @PostMapping("admin/update")
+    @Operation(summary = "根据 ID 更新用户（仅管理员）", description = "根据 ID 更新用户（仅管理员）")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
         if (userUpdateRequest == null || userUpdateRequest.getId() == null) {
@@ -163,7 +170,8 @@ public class UserController {
     /**
      * 删除用户
      */
-    @PostMapping("/delete")
+    @PostMapping("admin/delete")
+    @Operation(summary = "根据 ID 删除用户（仅管理员）", description = "根据 ID 删除用户（仅管理员）")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
@@ -176,7 +184,8 @@ public class UserController {
     /**
      * 用户登出
      */
-    @PostMapping("/logout")
+    @PostMapping("logout")
+    @Operation(summary = "用户登出", description = "用户登出")
     public BaseResponse<Boolean> userLogout(HttpServletRequest request) {
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
         boolean result = userService.userLogout(request);

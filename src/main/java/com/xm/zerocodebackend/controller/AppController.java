@@ -1,0 +1,306 @@
+package com.xm.zerocodebackend.controller;
+
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.mybatisflex.core.paginate.Page;
+import com.mybatisflex.core.query.QueryWrapper;
+import com.xm.zerocodebackend.annotation.AuthCheck;
+import com.xm.zerocodebackend.common.BaseResponse;
+import com.xm.zerocodebackend.common.DeleteRequest;
+import com.xm.zerocodebackend.common.ResultUtils;
+import com.xm.zerocodebackend.constant.AppConstant;
+import com.xm.zerocodebackend.constant.UserConstant;
+import com.xm.zerocodebackend.exception.BusinessException;
+import com.xm.zerocodebackend.exception.ErrorCode;
+import com.xm.zerocodebackend.exception.ThrowUtils;
+import com.xm.zerocodebackend.model.dto.app.AppAddRequest;
+import com.xm.zerocodebackend.model.dto.app.AppAdminUpdateRequest;
+import com.xm.zerocodebackend.model.dto.app.AppQueryRequest;
+import com.xm.zerocodebackend.model.dto.app.AppUpdateRequest;
+import com.xm.zerocodebackend.model.entity.App;
+import com.xm.zerocodebackend.model.entity.User;
+import com.xm.zerocodebackend.model.enums.CodeGenTypeEnum;
+import com.xm.zerocodebackend.model.vo.AppVO;
+import com.xm.zerocodebackend.service.AppService;
+import com.xm.zerocodebackend.service.UserService;
+
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * 应用 控制层。
+ *
+ * @author <a href="https://github.com/X1aoM1ngTX">X1aoM1ngTX</a>
+ */
+@RestController
+@RequestMapping("/app")
+@Tag(name = "App", description = "应用服务")
+public class AppController {
+
+    @Resource
+    private AppService appService;
+
+    @Resource
+    private UserService userService;
+
+    /**
+     * 创建应用
+     *
+     * @param appAddRequest 创建应用请求
+     * @param request       请求
+     * @return 应用 id
+     */
+    @PostMapping("/add")
+    @Operation(summary = "创建应用", description = "用户创建应用")
+    public BaseResponse<Long> addApp(@RequestBody AppAddRequest appAddRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(appAddRequest == null, ErrorCode.PARAMS_ERROR, "创建应用请求不能为空", "创建应用时请求参数不能为空");
+        // 参数校验
+        String initPrompt = appAddRequest.getInitPrompt();
+        ThrowUtils.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始化 prompt 不能为空",
+                "创建应用时初始化 prompt 不能为空");
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        // 构造入库对象
+        App app = new App();
+        BeanUtil.copyProperties(appAddRequest, app);
+        app.setUserId(loginUser.getId());
+        // 应用名称暂时为 initPrompt 前 12 位
+        app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
+        // 暂时设置为多文件生成
+        app.setCodeGenType(CodeGenTypeEnum.MULTI_FILE.getValue());
+        // 插入数据库
+        boolean result = appService.save(app);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建应用失败", "创建应用时数据库操作失败");
+        return ResultUtils.success(app.getId());
+    }
+
+    /**
+     * 更新应用（用户只能更新自己的应用名称）
+     *
+     * @param appUpdateRequest 更新请求
+     * @param request          请求
+     * @return 更新结果
+     */
+    @PostMapping("/update")
+    @Operation(summary = "更新应用", description = "用户更新应用名称")
+    public BaseResponse<Boolean> updateApp(@RequestBody AppUpdateRequest appUpdateRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(appUpdateRequest == null || appUpdateRequest.getId() == null, ErrorCode.PARAMS_ERROR,
+                "更新应用请求不能为空", "更新应用时请求参数不能为空");
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        long id = appUpdateRequest.getId();
+        // 判断是否存在
+        App oldApp = appService.getById(id);
+        ThrowUtils.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在", "应用不存在");
+        // 仅本人可更新
+        if (!oldApp.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH, "您没有权限更新该应用", "您没有权限更新该应用");
+        }
+        App app = new App();
+        app.setId(id);
+        app.setAppName(appUpdateRequest.getAppName());
+        // 设置编辑时间
+        app.setEditTime(LocalDateTime.now());
+        boolean result = appService.updateById(app);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "更新应用失败", "更新应用时数据库操作失败");
+        return ResultUtils.success(true);
+    }
+
+    /**
+     * 删除应用（用户只能删除自己的应用）
+     *
+     * @param deleteRequest 删除请求
+     * @param request       请求
+     * @return 删除结果
+     */
+    @PostMapping("/delete")
+    @Operation(summary = "删除应用", description = "用户删除应用")
+    public BaseResponse<Boolean> deleteApp(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
+        if (deleteRequest == null || deleteRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "删除应用请求不能为空", "删除应用时请求参数不能为空");
+        }
+        User loginUser = userService.getLoginUser(request);
+        long id = deleteRequest.getId();
+        // 判断是否存在
+        App oldApp = appService.getById(id);
+        ThrowUtils.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在", "应用不存在");
+        // 仅本人或管理员可删除
+        if (!oldApp.getUserId().equals(loginUser.getId()) && !UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole())) {
+            throw new BusinessException(ErrorCode.NO_AUTH, "您没有权限删除该应用", "您没有权限删除该应用");
+        }
+        boolean result = appService.removeById(id);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 根据 id 获取应用详情
+     *
+     * @param id 应用 id
+     * @return 应用详情
+     */
+    @GetMapping("/get/app")
+    @Operation(summary = "根据 id 获取应用详情", description = "用户根据 id 获取应用详情")
+    public BaseResponse<AppVO> getAppVOById(long id) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空", "获取应用详情时应用 ID 不能为空");
+        // 查询数据库
+        App app = appService.getById(id);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在", "应用不存在");
+        // 获取封装类（包含用户信息）
+        return ResultUtils.success(appService.getAppVO(app));
+    }
+
+    /**
+     * 分页获取当前用户创建的应用列表
+     *
+     * @param appQueryRequest 查询请求
+     * @param request         请求
+     * @return 应用列表
+     */
+    @PostMapping("/list/my-apps")
+    @Operation(summary = "分页获取当前用户创建的应用列表", description = "用户分页查询自己创建的应用列表")
+    public BaseResponse<Page<AppVO>> listMyAppVOByPage(@RequestBody AppQueryRequest appQueryRequest,
+            HttpServletRequest request) {
+        ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "查询请求不能为空", "分页查询应用时查询请求不能为空");
+        User loginUser = userService.getLoginUser(request);
+        // 限制每页最多 20 个
+        long pageSize = appQueryRequest.getPageSize();
+        ThrowUtils.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR, "每页最多查询 20 个应用", "分页查询应用时每页最多查询 20 个应用");
+        long pageNum = appQueryRequest.getCurrent();
+        // 只查询当前用户的应用
+        appQueryRequest.setUserId(loginUser.getId());
+        QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
+        Page<App> appPage = appService.page(Page.of(pageNum, pageSize), queryWrapper);
+        // 数据封装
+        Page<AppVO> appVOPage = new Page<>(pageNum, pageSize, appPage.getTotalRow());
+        List<AppVO> appVOList = appService.getAppVOList(appPage.getRecords());
+        appVOPage.setRecords(appVOList);
+        return ResultUtils.success(appVOPage);
+    }
+
+    /**
+     * 分页获取精选应用列表
+     *
+     * @param appQueryRequest 查询请求
+     * @return 精选应用列表
+     */
+    @PostMapping("/list/good-apps")
+    @Operation(summary = "分页获取精选应用列表", description = "用户分页查询精选应用列表")
+    public BaseResponse<Page<AppVO>> listGoodAppVOByPage(@RequestBody AppQueryRequest appQueryRequest) {
+        ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "查询请求不能为空", "分页查询精选应用时查询请求不能为空");
+        // 限制每页最多 20 个
+        long pageSize = appQueryRequest.getPageSize();
+        ThrowUtils.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR, "每页最多查询 20 个应用", "分页查询精选应用时每页最多查询 20 个应用");
+        long pageNum = appQueryRequest.getCurrent();
+        // 只查询精选的应用
+        appQueryRequest.setPriority(AppConstant.GOOD_APP_PRIORITY);
+        QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
+        // 分页查询
+        Page<App> appPage = appService.page(Page.of(pageNum, pageSize), queryWrapper);
+        // 数据封装
+        Page<AppVO> appVOPage = new Page<>(pageNum, pageSize, appPage.getTotalRow());
+        List<AppVO> appVOList = appService.getAppVOList(appPage.getRecords());
+        appVOPage.setRecords(appVOList);
+        return ResultUtils.success(appVOPage);
+    }
+
+    /**
+     * 管理员删除应用
+     *
+     * @param deleteRequest 删除请求
+     * @return 删除结果
+     */
+    @PostMapping("/admin/delete")
+    @Operation(summary = "管理员删除应用", description = "管理员删除应用")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> deleteAppByAdmin(@RequestBody DeleteRequest deleteRequest) {
+        if (deleteRequest == null || deleteRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "应用 ID 不能为空", "删除应用时应用 ID 不能为空");
+        }
+        long id = deleteRequest.getId();
+        // 判断是否存在
+        App oldApp = appService.getById(id);
+        ThrowUtils.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在", "删除应用时应用不存在");
+        boolean result = appService.removeById(id);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 管理员更新应用
+     *
+     * @param appAdminUpdateRequest 更新请求
+     * @return 更新结果
+     */
+    @PostMapping("/admin/update")
+    @Operation(summary = "管理员更新应用", description = "管理员更新应用")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> updateAppByAdmin(@RequestBody AppAdminUpdateRequest appAdminUpdateRequest) {
+        if (appAdminUpdateRequest == null || appAdminUpdateRequest.getId() == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "应用 ID 不能为空", "更新应用时应用 ID 不能为空");
+        }
+        long id = appAdminUpdateRequest.getId();
+        // 判断是否存在
+        App oldApp = appService.getById(id);
+        ThrowUtils.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在", "更新应用时应用不存在");
+        App app = new App();
+        BeanUtil.copyProperties(appAdminUpdateRequest, app);
+        // 设置编辑时间
+        app.setEditTime(LocalDateTime.now());
+        boolean result = appService.updateById(app);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "更新应用时操作失败", "更新应用时操作数据库失败");
+        return ResultUtils.success(true);
+    }
+
+    /**
+     * 管理员分页获取应用列表
+     *
+     * @param appQueryRequest 查询请求
+     * @return 应用列表
+     */
+    @PostMapping("/admin/list/apps")
+    @Operation(summary = "管理员分页获取应用列表", description = "管理员分页查询应用列表")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Page<AppVO>> listAppVOByPageByAdmin(@RequestBody AppQueryRequest appQueryRequest) {
+        ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "查询请求不能为空", "分页查询应用时查询请求不能为空");
+        long pageNum = appQueryRequest.getCurrent();
+        long pageSize = appQueryRequest.getPageSize();
+        QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
+        Page<App> appPage = appService.page(Page.of(pageNum, pageSize), queryWrapper);
+        // 数据封装
+        Page<AppVO> appVOPage = new Page<>(pageNum, pageSize, appPage.getTotalRow());
+        List<AppVO> appVOList = appService.getAppVOList(appPage.getRecords());
+        appVOPage.setRecords(appVOList);
+        return ResultUtils.success(appVOPage);
+    }
+
+    /**
+     * 管理员根据 id 获取应用详情
+     *
+     * @param id 应用 id
+     * @return 应用详情
+     */
+    @GetMapping("/admin/get/app")
+    @Operation(summary = "管理员根据 id 获取应用详情", description = "管理员根据 id 获取应用详情")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<AppVO> getAppVOByIdByAdmin(long id) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空", "根据 ID 获取应用详情时应用 ID 不能为空");
+        // 查询数据库
+        App app = appService.getById(id);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在", "根据 ID 获取应用详情时应用不存在");
+        // 获取封装类
+        return ResultUtils.success(appService.getAppVO(app));
+    }
+
+}
