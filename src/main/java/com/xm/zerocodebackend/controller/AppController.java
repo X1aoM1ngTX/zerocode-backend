@@ -2,14 +2,20 @@ package com.xm.zerocodebackend.controller;
 
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
@@ -24,6 +30,7 @@ import com.xm.zerocodebackend.exception.ErrorCode;
 import com.xm.zerocodebackend.exception.ThrowUtils;
 import com.xm.zerocodebackend.model.dto.app.AppAddRequest;
 import com.xm.zerocodebackend.model.dto.app.AppAdminUpdateRequest;
+import com.xm.zerocodebackend.model.dto.app.AppDeployRequest;
 import com.xm.zerocodebackend.model.dto.app.AppQueryRequest;
 import com.xm.zerocodebackend.model.dto.app.AppUpdateRequest;
 import com.xm.zerocodebackend.model.entity.App;
@@ -35,6 +42,8 @@ import com.xm.zerocodebackend.service.UserService;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -301,6 +310,58 @@ public class AppController {
         ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在", "根据 ID 获取应用详情时应用不存在");
         // 获取封装类
         return ResultUtils.success(appService.getAppVO(app));
+    }
+
+    /**
+     * 应用聊天生成代码（流式 SSE）
+     *
+     * @param appId   应用 ID
+     * @param message 用户消息
+     * @param request 请求对象
+     * @return 生成结果流
+     */
+    @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
+            @RequestParam String message,
+            HttpServletRequest request) {
+        // 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 无效", "应用 ID 错误");
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空", "用户消息不能为空");
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        // 调用服务生成代码（流式）
+        Flux<String> contextFlux = appService.chatToGenCode(appId, message, loginUser);
+        return contextFlux.map(chunk -> {
+            // 将内容包装成JSONd对象
+            Map<String, String> wrapper = Map.of("d", chunk);
+            String jsonData = JSONUtil.toJsonStr(wrapper);
+            return ServerSentEvent.<String>builder()
+                    .data(jsonData)
+                    .build();
+
+        }).concatWith(Mono.just(ServerSentEvent.<String>builder()
+                .event("done")
+                .data("")
+                .build()));
+    }
+
+    /**
+     * 应用部署
+     *
+     * @param appDeployRequest 部署请求
+     * @param request          请求
+     * @return 部署 URL
+     */
+    @PostMapping("/deploy")
+    public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR);
+        Long appId = appDeployRequest.getAppId();
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 错误", "应用 ID 不能为空且必须大于 0");
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        // 调用服务部署应用
+        String deployUrl = appService.deployApp(appId, loginUser);
+        return ResultUtils.success(deployUrl);
     }
 
 }
