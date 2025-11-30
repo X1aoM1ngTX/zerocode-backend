@@ -42,7 +42,6 @@ import com.xm.zerocodebackend.service.UserService;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -321,6 +320,7 @@ public class AppController {
      * @return 生成结果流
      */
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "应用聊天生成代码（流式 SSE）", description = "用户与应用聊天生成代码，返回流式结果")
     public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
             @RequestParam String message,
             HttpServletRequest request) {
@@ -353,6 +353,7 @@ public class AppController {
      * @return 部署 URL
      */
     @PostMapping("/deploy")
+    @Operation(summary = "应用部署", description = "用户部署应用，返回部署 URL")
     public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR);
         Long appId = appDeployRequest.getAppId();

@@ -1,6 +1,7 @@
 package com.xm.zerocodebackend.core;
 
 import com.xm.zerocodebackend.ai.AiCodeGeneratorService;
+import com.xm.zerocodebackend.ai.AiCodeGeneratorServiceFactory;
 import com.xm.zerocodebackend.ai.model.HtmlCodeResult;
 import com.xm.zerocodebackend.ai.model.MultiFileCodeResult;
 import com.xm.zerocodebackend.core.parser.CodeParserExecutor;
@@ -25,7 +26,7 @@ import java.io.File;
 public class AiCodeGeneratorFacade {
 
     @Resource
-    private AiCodeGeneratorService aiCodeGeneratorService;
+    private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
 
     // -=== 结构化生成代码 ===-
 
@@ -41,6 +42,8 @@ public class AiCodeGeneratorFacade {
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成类型为空", "生成代码时必须指定生成类型");
         }
+        // 根据 appId 获取相应的 AI 服务实例
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 HtmlCodeResult result = aiCodeGeneratorService.generateHtmlCode(userMessage);
@@ -70,6 +73,8 @@ public class AiCodeGeneratorFacade {
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成类型为空", "生成代码时必须指定生成类型");
         }
+        // 根据 appId 获取相应的 AI 服务实例
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 Flux<String> codeStream = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);

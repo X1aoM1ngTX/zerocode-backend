@@ -15,6 +15,8 @@ import org.springframework.web.servlet.HandlerMapping;
 
 import com.xm.zerocodebackend.constant.AppConstant;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -22,6 +24,7 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 @RestController
 @RequestMapping("/static")
+@Tag(name = "Static", description = "静态资源服务")
 public class StaticResourceController {
 
     // 应用生成根目录（用于浏览）
@@ -32,6 +35,7 @@ public class StaticResourceController {
      * 访问格式：http://localhost:8123/api/static/{deployKey}[/{fileName}]
      */
     @GetMapping("/{deployKey}/**")
+    @Operation(summary = "浏览生成的应用", description = "用户浏览AI生成的应用")
     public ResponseEntity<Resource> serveStaticResource(
             @PathVariable String deployKey,
             HttpServletRequest request) {
@@ -70,7 +74,7 @@ public class StaticResourceController {
      * 根据文件扩展名返回带字符编码的 Content-Type
      */
     private String getContentTypeWithCharset(String filePath) {
-        
+
         if (filePath.endsWith(".html"))
             return "text/html; charset=UTF-8";
 
