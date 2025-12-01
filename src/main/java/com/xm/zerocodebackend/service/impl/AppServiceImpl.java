@@ -9,6 +9,7 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.xm.zerocodebackend.constant.AppConstant;
 import com.xm.zerocodebackend.core.AiCodeGeneratorFacade;
+import com.xm.zerocodebackend.core.builder.VueProjectBuilder;
 import com.xm.zerocodebackend.core.handler.StreamHandlerExecutor;
 import com.xm.zerocodebackend.exception.BusinessException;
 import com.xm.zerocodebackend.exception.ErrorCode;
@@ -58,6 +59,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private StreamHandlerExecutor streamHandlerExecutor;
+
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
 
     /**
      * 获取应用视图对象
@@ -119,7 +123,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
      * 获取应用视图对象列表
      *
      * @param appList 应用实体列表
-     * @return List<AppVO>  应用视图对象列表
+     * @return List<AppVO> 应用视图对象列表
      */
     @Override
     public List<AppVO> getAppVOList(List<App> appList) {
@@ -199,21 +203,33 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (!sourceDir.exists() || !sourceDir.isDirectory()) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "应用代码不存在", "应用代码不存在，请先生成代码");
         }
-        // 7. 复制文件到部署目录
+        // 7. Vue 项目特殊处理，执行构建
+        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
+        if (codeGenTypeEnum == CodeGenTypeEnum.VUE_PROJECT) {
+            boolean buildSuccess = vueProjectBuilder.buildProject(sourceDirPath);
+            ThrowUtils.throwIf(!buildSuccess, ErrorCode.OPERATION_ERROR, "Vue 项目构建失败", "Vue 项目构建失败，请重新部署");
+            File distDir = new File(sourceDirPath, "dist");
+            ThrowUtils.throwIf(!distDir.exists() || !distDir.isDirectory(),
+                    ErrorCode.OPERATION_ERROR, "Vue 项目构建结果不存在", "Vue 项目构建完成但未生成 dist 目录");
+            // 构建完成后，将构建生成的 dist 目录复制到部署目录
+            sourceDir = distDir;
+            log.info("Vue项目构建成功，将部署dist目录：{}", sourceDir.getAbsolutePath());
+        }
+        // 8. 复制文件到部署目录
         String deployDirPath = AppConstant.CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
         try {
             FileUtil.copyContent(sourceDir, new File(deployDirPath), true);
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "部署失败：" + e.getMessage());
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "部署失败", "部署失败：" + e.getMessage());
         }
-        // 8. 更新应用的 deployKey 和部署时间
+        // 9. 更新应用的 deployKey 和部署时间
         App updateApp = new App();
         updateApp.setId(appId);
         updateApp.setDeployKey(deployKey);
         updateApp.setDeployedTime(LocalDateTime.now());
         boolean updateResult = this.updateById(updateApp);
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败", "更新应用部署信息失败");
-        // 9. 返回可访问的 URL
+        // 10. 返回可访问的 URL
         return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
     }
 
