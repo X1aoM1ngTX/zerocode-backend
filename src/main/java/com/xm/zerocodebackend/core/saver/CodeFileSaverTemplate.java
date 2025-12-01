@@ -61,7 +61,7 @@ public abstract class CodeFileSaverTemplate<T> {
      * @return 目录路径
      */
     protected final String buildUniqueDir(Long appId) {
-        ThrowUtils.throwIf(appId == null || appId <=0 , ErrorCode.PARAMS_ERROR, "应用 ID 错误", "应用 ID 错误");
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 错误", "应用 ID 错误");
         String codeType = getCodeType().getValue();
         String uniqueDirName = StrUtil.format("{}_{}", codeType, appId);
         String dirPath = FILE_SAVE_ROOT_DIR + File.separator + uniqueDirName;

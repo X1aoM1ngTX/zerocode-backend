@@ -35,12 +35,15 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- 暂时注释掉 DevTools 以解决类加载器冲突问题 -->
+        <!--
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+        -->
         <!--  MyBatisFlex  -->
         <dependency>
             <groupId>com.mybatis-flex</groupId>

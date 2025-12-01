@@ -61,13 +61,25 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         // 验证消息类型是否有效
         ChatHistoryMessageTypeEnum messageTypeEnum = ChatHistoryMessageTypeEnum.getEnumByValue(messageType);
         ThrowUtils.throwIf(messageTypeEnum == null, ErrorCode.UNSUPPORTED_TYPE, "不支持的消息类型", "不支持的消息类型: " + messageType);
+
+        log.info("开始添加对话消息到数据库，appId: {}, messageType: {}, userId: {}, 消息长度: {}",
+                appId, messageType, userId, message.length());
+
         ChatHistory chatHistory = ChatHistory.builder()
                 .appId(appId)
                 .message(message)
                 .messageType(messageType)
                 .userId(userId)
                 .build();
-        return this.save(chatHistory);
+
+        boolean result = this.save(chatHistory);
+        if (result) {
+            log.info("成功添加对话消息到数据库，appId: {}, messageId: {}, messageType: {}",
+                    appId, chatHistory.getId(), messageType);
+        } else {
+            log.error("添加对话消息到数据库失败，appId: {}, messageType: {}", appId, messageType);
+        }
+        return result;
     }
 
     /**
@@ -158,40 +170,55 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     /**
      * 加载应用的对话历史到聊天记忆中
      * 
-     * @param appId 应用 ID
+     * @param appId      应用 ID
      * @param chatMemory 聊天记忆实例
-     * @param maxCount 最大加载条数
+     * @param maxCount   最大加载条数
      * @return 实际加载的消息数量
      */
     @Override
     public int loadChatHistoryToMemory(Long appId, MessageWindowChatMemory chatMemory, int maxCount) {
+        log.info("开始为 appId: {} 加载历史对话到Redis，最大加载条数: {}", appId, maxCount);
         try {
             QueryWrapper queryWrapper = QueryWrapper.create()
                     .eq(ChatHistory::getAppId, appId)
                     .orderBy(ChatHistory::getCreateTime, false)
                     .limit(1, maxCount);
             List<ChatHistory> historyList = this.list(queryWrapper);
+
             if (CollUtil.isEmpty(historyList)) {
+                log.info("appId: {} 没有历史对话记录", appId);
                 return 0;
             }
+
+            log.info("从数据库查询到 appId: {} 的 {} 条历史记录", appId, historyList.size());
+
             // 反转列表，确保按照时间正序（老的在前，新的在后）
             historyList = historyList.reversed();
             // 按照时间顺序将消息添加到记忆中
             int loadedCount = 0;
+            int userMessageCount = 0;
+            int aiMessageCount = 0;
+
             // 先清理历史缓存，防止重复加载
             chatMemory.clear();
+            log.info("已清理 appId: {} 的聊天记忆缓存", appId);
+
             for (ChatHistory history : historyList) {
                 if (ChatHistoryMessageTypeEnum.USER.getValue().equals(history.getMessageType())) {
                     chatMemory.add(UserMessage.from(history.getMessage()));
+                    userMessageCount++;
                 } else if (ChatHistoryMessageTypeEnum.AI.getValue().equals(history.getMessageType())) {
                     chatMemory.add(AiMessage.from(history.getMessage()));
+                    aiMessageCount++;
                 }
                 loadedCount++;
             }
-            log.info("成功为 appId: {} 加载 {} 条历史消息", appId, loadedCount);
+
+            log.info("成功为 appId: {} 加载 {} 条历史消息到Redis（用户消息: {} 条，AI消息: {} 条）",
+                    appId, loadedCount, userMessageCount, aiMessageCount);
             return loadedCount;
         } catch (Exception e) {
-            log.error("加载历史对话失败，appId: {}, error: {}", appId, e.getMessage(), e);
+            log.error("加载历史对话到Redis失败，appId: {}, error: {}", appId, e.getMessage(), e);
             // 加载失败不影响系统运行，只是没有历史上下文
             return 0;
         }

@@ -5,17 +5,17 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
-import com.xm.zerocodebackend.model.dto.app.AppQueryRequest;
-import com.xm.zerocodebackend.model.entity.App;
 import com.xm.zerocodebackend.constant.AppConstant;
 import com.xm.zerocodebackend.core.AiCodeGeneratorFacade;
+import com.xm.zerocodebackend.core.handler.StreamHandlerExecutor;
 import com.xm.zerocodebackend.exception.BusinessException;
 import com.xm.zerocodebackend.exception.ErrorCode;
 import com.xm.zerocodebackend.exception.ThrowUtils;
 import com.xm.zerocodebackend.mapper.AppMapper;
+import com.xm.zerocodebackend.model.dto.app.AppQueryRequest;
+import com.xm.zerocodebackend.model.entity.App;
 import com.xm.zerocodebackend.model.entity.User;
 import com.xm.zerocodebackend.model.enums.ChatHistoryMessageTypeEnum;
 import com.xm.zerocodebackend.model.enums.CodeGenTypeEnum;
@@ -26,6 +26,7 @@ import com.xm.zerocodebackend.service.ChatHistoryService;
 import com.xm.zerocodebackend.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.io.File;
@@ -36,8 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
 
 /**
  * 应用 服务层实现。
@@ -56,6 +55,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private ChatHistoryService chatHistoryService;
+
+    @Resource
+    private StreamHandlerExecutor streamHandlerExecutor;
 
     /**
      * 获取应用视图对象
@@ -116,8 +118,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     /**
      * 获取应用视图对象列表
      *
-     * @param List<App> appList 应用实体列表
-     * @return List<AppVO> 应用视图对象列表
+     * @param appList 应用实体列表
+     * @return List<AppVO>  应用视图对象列表
      */
     @Override
     public List<AppVO> getAppVOList(List<App> appList) {
@@ -159,29 +161,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
                 ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
         ThrowUtils.throwIf(!addUserMessageSuccess, ErrorCode.OPERATION_ERROR, "添加用户消息到对话历史失败", "添加用户消息到对话历史失败");
         // 6. 调用 AI 生成代码（流式）
-        Flux<String> contentFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
-        // 7. 调用 AI 生成代码后，添加 AI 回复消息到对话历史
-        StringBuilder aiResponseBuilder = new StringBuilder();
-        return contentFlux
-                .map(chunk -> {
-                    // 收集AI响应内容
-                    aiResponseBuilder.append(chunk);
-                    return chunk;
-                })
-                .doOnComplete(() -> {
-                    // 流式响应完成后，添加AI消息到对话历史
-                    String aiResponse = aiResponseBuilder.toString();
-                    if (StrUtil.isNotBlank(aiResponse)) {
-                        chatHistoryService.addChatMessage(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(),
-                                loginUser.getId());
-                    }
-                })
-                .doOnError(error -> {
-                    // 如果AI回复失败，也要记录错误消息
-                    String errorMessage = "AI回复失败: " + error.getMessage();
-                    chatHistoryService.addChatMessage(appId, errorMessage, ChatHistoryMessageTypeEnum.AI.getValue(),
-                            loginUser.getId());
-                });
+        Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
+        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
     }
 
     /**
@@ -238,7 +219,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     /**
      * 根据应用 ID 删除应用的相关对话历史
-     * 
+     *
      * @param appId 应用 ID
      * @return 是否删除成功
      */
