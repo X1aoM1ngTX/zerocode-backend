@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import com.xm.zerocodebackend.model.dto.app.AppAddRequest;
 import com.xm.zerocodebackend.model.dto.app.AppQueryRequest;
 import com.xm.zerocodebackend.model.entity.App;
 import com.xm.zerocodebackend.model.entity.User;
@@ -68,4 +69,6 @@ public interface AppService extends IService<App> {
      * @param appUrl 应用访问URL
      */
     void generateAppScreenshotAsync(Long appId, String appUrl);
+
+    Long createApp(AppAddRequest appAddRequest, User loginUser);
 }
