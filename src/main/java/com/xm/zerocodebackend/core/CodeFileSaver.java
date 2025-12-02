@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 public class CodeFileSaver {
 
     // 文件保存根目录
-    private static final String FILE_SAVE_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
+    private static final String FILE_SAVE_ROOT_DIR = "E:/Local/desktop/Code/ZeroCode/zerocode-backend/tmp/code_output";
 
     /**
      * 保存 HtmlCodeResult
