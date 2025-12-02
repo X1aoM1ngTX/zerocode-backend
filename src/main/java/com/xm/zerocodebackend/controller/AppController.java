@@ -393,17 +393,20 @@ public class AppController {
         if (!app.getUserId().equals(loginUser.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH, "无权限下载该应用代码", "只有应用创建者可以下载代码");
         }
-        // 4. 构建应用代码目录路径（生成目录，非部署目录）
+        // 4. 检查应用是否已部署
+        ThrowUtils.throwIf(StrUtil.isBlank(app.getDeployKey()) || app.getDeployedTime() == null,
+                ErrorCode.OPERATION_ERROR, "应用未部署", "请先部署应用后再下载代码");
+        // 5. 构建应用代码目录路径（生成目录，非部署目录）
         String codeGenType = app.getCodeGenType();
         String sourceDirName = codeGenType + "_" + appId;
         String sourceDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + sourceDirName;
-        // 5. 检查代码目录是否存在
+        // 6. 检查代码目录是否存在
         File sourceDir = new File(sourceDirPath);
         ThrowUtils.throwIf(!sourceDir.exists() || !sourceDir.isDirectory(),
                 ErrorCode.NOT_FOUND_ERROR, "应用代码目录不存在", "应用代码不存在，请先生成代码");
-        // 6. 生成下载文件名（不建议添加中文内容）
+        // 7. 生成下载文件名（不建议添加中文内容）
         String downloadFileName = String.valueOf(appId);
-        // 7. 调用通用下载服务
+        // 8. 调用通用下载服务
         projectDownloadService.downloadProjectZip(sourceDirPath, downloadFileName, response);
     }
 
