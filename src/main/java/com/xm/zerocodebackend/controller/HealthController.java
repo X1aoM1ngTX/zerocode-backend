@@ -22,6 +22,6 @@ public class HealthController {
     @Operation(summary = "健康检查", description = "检查服务是否正常运行")
     @GetMapping("/")
     public BaseResponse<String> healthCheck() {
-        return ResultUtils.success( "ok");
+        return ResultUtils.success("ok");
     }
 }

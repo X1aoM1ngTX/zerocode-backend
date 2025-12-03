@@ -3,6 +3,9 @@ package com.xm.zerocodebackend.model.enums;
 import cn.hutool.core.util.ObjUtil;
 import lombok.Getter;
 
+/**
+ * 代码生成类型枚举
+ */
 @Getter
 public enum CodeGenTypeEnum {
 

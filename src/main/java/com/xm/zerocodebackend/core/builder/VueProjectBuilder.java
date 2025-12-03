@@ -44,27 +44,27 @@ public class VueProjectBuilder {
         // 检查 package.json 是否存在
         File packageJson = new File(projectDir, "package.json");
         if (!packageJson.exists()) {
-            log.error("package.json 文件不存在: {}", packageJson.getAbsolutePath());
+            log.error("package.json 文件不存在: {}", projectPath);
             return false;
         }
         log.info("开始构建 Vue 项目: {}", projectPath);
         // 执行 npm install
         if (!executeNpmInstall(projectDir)) {
-            log.error("npm install 执行失败");
+            log.error("npm install 执行失败：{}", projectPath);
             return false;
         }
         // 执行 npm run build
         if (!executeNpmBuild(projectDir)) {
-            log.error("npm run build 执行失败");
+            log.error("npm run build 执行失败：{}", projectPath);
             return false;
         }
         // 验证 dist 目录是否生成
         File distDir = new File(projectDir, "dist");
-        if (!distDir.exists()) {
-            log.error("构建完成但 dist 目录未生成: {}", distDir.getAbsolutePath());
+        if (!distDir.exists() || !distDir.isDirectory()) {
+            log.error("构建完成但 dist 目录未生成：{}", projectPath);
             return false;
         }
-        log.info("Vue 项目构建成功，dist 目录: {}", distDir.getAbsolutePath());
+        log.info("Vue 项目构建成功，dist 目录：{}", projectPath);
         return true;
     }
 

@@ -196,9 +196,6 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
             historyList = historyList.reversed();
             // 按照时间顺序将消息添加到记忆中
             int loadedCount = 0;
-            int userMessageCount = 0;
-            int aiMessageCount = 0;
-
             // 先清理历史缓存，防止重复加载
             chatMemory.clear();
             log.info("已清理 appId: {} 的聊天记忆缓存", appId);
@@ -206,16 +203,13 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
             for (ChatHistory history : historyList) {
                 if (ChatHistoryMessageTypeEnum.USER.getValue().equals(history.getMessageType())) {
                     chatMemory.add(UserMessage.from(history.getMessage()));
-                    userMessageCount++;
                 } else if (ChatHistoryMessageTypeEnum.AI.getValue().equals(history.getMessageType())) {
                     chatMemory.add(AiMessage.from(history.getMessage()));
-                    aiMessageCount++;
                 }
                 loadedCount++;
             }
 
-            log.info("成功为 appId: {} 加载 {} 条历史消息到Redis（用户消息: {} 条，AI消息: {} 条）",
-                    appId, loadedCount, userMessageCount, aiMessageCount);
+            log.info("成功为 appId: {} 加载 {} 条历史消息到Redis", appId, loadedCount);
             return loadedCount;
         } catch (Exception e) {
             log.error("加载历史对话到Redis失败，appId: {}, error: {}", appId, e.getMessage(), e);

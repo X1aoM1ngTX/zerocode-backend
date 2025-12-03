@@ -1,5 +1,8 @@
 package com.xm.zerocodebackend.constant;
 
+/**
+ * 应用常量
+ */
 public interface AppConstant {
 
     /**

@@ -1,8 +1,11 @@
 spring:
   application:
     name: zerocode-backend
-  profiles:
-    active: dev
+    # session 配置
+  session:
+    store-type: redis
+    # session 30 天过期
+    timeout: 2592000
   # mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -14,19 +17,25 @@ spring:
     redis:
       host: localhost
       port: 6379
-      database: 2
+      database: 0
       password: 
       ttl: 3600
-
+  # environment
+  profiles:
+    active: dev
 server:
   port: 8123
   servlet:
     context-path: /api
-
+    # cookie 30 天过期
+    session:
+      cookie:
+        max-age: 2592000
 # springdoc-openapi
 springdoc:
   group-configs:
     - group: 'default'
+      paths-to-match: '/**'
       packages-to-scan: com.xm.zerocodebackend.controller
 
 # knife4j

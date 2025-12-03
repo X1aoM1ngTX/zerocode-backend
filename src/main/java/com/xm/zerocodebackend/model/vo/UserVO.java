@@ -6,6 +6,9 @@ import java.io.Serializable;
 
 import lombok.Data;
 
+/**
+ * 脱敏后的用户视图对象
+ */
 @Data
 public class UserVO implements Serializable {
 

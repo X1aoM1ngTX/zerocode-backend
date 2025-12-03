@@ -1,6 +1,6 @@
 # ZeroCode Backend
 
-ZeroCode 后端项目，基于 Spring Boot 3 构建的现代化 Java 后端服务。
+ZeroCode 后端项目，基于 Spring Boot 3 构建的现代化 Java 后端服务，集成 AI 代码生成功能。
 
 ## 技术栈
 
@@ -8,15 +8,30 @@ ZeroCode 后端项目，基于 Spring Boot 3 构建的现代化 Java 后端服�
 - **数据库**: MySQL
 - **ORM**: MyBatis-Flex 1.11.0
 - **连接池**: HikariCP
+- **缓存**: Redis + Spring Session
 - **API 文档**: Knife4j 4.4.0 (OpenAPI 3)
 - **工具库**: Hutool 5.8.38
 - **AOP**: Spring AOP
 - **开发工具**: Lombok
+- **AI 集成**: LangChain4j 1.1.0
+- **网页截图**: Selenium 4.33.0
+- **云存储**: 腾讯云 COS 5.6.227
+- **本地缓存**: Caffeine
 
 ## 项目结构
 
 ```
 src/main/java/com/xm/zerocodebackend/
+├── ai/                  # AI 代码生成模块
+│   ├── model/           # AI 相关模型
+│   │   ├── message/     # 消息模型
+│   │   ├── HtmlCodeResult.java
+│   │   └── MultiFileCodeResult.java
+│   ├── tools/           # AI 工具类
+│   ├── AiCodeGenTypeRoutingService.java
+│   ├── AiCodeGenTypeRoutingServiceFactory.java
+│   ├── AiCodeGeneratorService.java
+│   └── AiCodeGeneratorServiceFactory.java
 ├── annotation/          # 自定义注解
 │   └── AuthCheck.java   # 权限检查注解
 ├── aop/                 # AOP 切面
@@ -28,12 +43,28 @@ src/main/java/com/xm/zerocodebackend/
 │   └── ResultUtils.java      # 响应工具类
 ├── config/              # 配置类
 │   ├── CorsConfig.java       # 跨域配置
-│   └── JsonConfig.java       # JSON 配置
+│   ├── CosClientConfig.java  # 腾讯云 COS 配置
+│   ├── JsonConfig.java       # JSON 配置
+│   ├── ReasoningStreamingChatModelConfig.java  # AI 流式模型配置
+│   └── RedisChatMemoryStoreConfig.java  # Redis 聊天记忆配置
 ├── constant/            # 常量定义
+│   ├── AppConstant.java      # 应用常量
 │   └── UserConstant.java     # 用户常量
 ├── controller/          # 控制器
+│   ├── AppController.java    # 应用控制器
+│   ├── ChatHistoryController.java  # 聊天历史控制器
 │   ├── HealthController.java # 健康检查
+│   ├── StaticResourceController.java  # 静态资源控制器
 │   └── UserController.java   # 用户控制器
+├── core/                # 核心功能
+│   ├── builder/         # 项目构建器
+│   │   └── VueProjectBuilder.java
+│   ├── handler/         # 流式处理器
+│   ├── parser/          # 代码解析器
+│   ├── saver/           # 代码保存器
+│   ├── AiCodeGeneratorFacade.java
+│   ├── CodeFileSaver.java
+│   └── CodeParser.java
 ├── exception/           # 异常处理
 │   ├── BusinessException.java  # 业务异常
 │   ├── ErrorCode.java         # 错误码
@@ -41,22 +72,44 @@ src/main/java/com/xm/zerocodebackend/
 │   └── ThrowUtils.java        # 异常工具
 ├── generator/           # 代码生成器
 │   └── MyBatisCodeGenerator.java  # MyBatis 代码生成器
+├── manager/             # 管理器
+│   └── CosManager.java   # 腾讯云 COS 管理器
 ├── mapper/              # MyBatis 映射器
+│   ├── AppMapper.java   # 应用映射器
+│   ├── ChatHistoryMapper.java  # 聊天历史映射器
 │   └── UserMapper.java   # 用户映射器
 ├── model/               # 数据模型
 │   ├── dto/             # 数据传输对象
+│   │   ├── app/         # 应用相关 DTO
+│   │   ├── chatHistory/ # 聊天历史相关 DTO
 │   │   └── user/        # 用户相关 DTO
 │   ├── entity/          # 实体类
+│   │   ├── App.java     # 应用实体
+│   │   ├── ChatHistory.java  # 聊天历史实体
 │   │   └── User.java    # 用户实体
 │   ├── enums/           # 枚举类
+│   │   ├── ChatHistoryMessageTypeEnum.java  # 聊天消息类型枚举
+│   │   ├── CodeGenTypeEnum.java  # 代码生成类型枚举
 │   │   └── UserRoleEnum.java  # 用户角色枚举
 │   └── vo/              # 视图对象
+│       ├── AppVO.java   # 应用视图
 │       ├── LoginUserVO.java   # 登录用户视图
 │       └── UserVO.java        # 用户视图
-└── service/             # 服务层
-    ├── UserService.java       # 用户服务接口
-    └── impl/
-        └── UserServiceImpl.java  # 用户服务实现
+├── service/             # 服务层
+│   ├── AppService.java  # 应用服务接口
+│   ├── ChatHistoryService.java  # 聊天历史服务接口
+│   ├── ProjectDownloadService.java  # 项目下载服务接口
+│   ├── ScreenshotService.java  # 截图服务接口
+│   ├── UserService.java  # 用户服务接口
+│   └── impl/            # 服务实现
+│       ├── AppServiceImpl.java
+│       ├── ChatHistoryServiceImpl.java
+│       ├── ProjectDownloadServiceImpl.java
+│       ├── ScreenshotServiceImpl.java
+│       └── UserServiceImpl.java
+├── utils/               # 工具类
+│   └── WebScreenshotUtils.java  # 网页截图工具
+└── ZerocodeBackendApplication.java  # 应用程序入口
 ```
 
 ## 快速开始
@@ -64,6 +117,7 @@ src/main/java/com/xm/zerocodebackend/
 ### 环境要求
 - Java 21+
 - MySQL 8.0+
+- Redis 6.0+
 - Maven 3.6+
 
 ### 数据库配置
@@ -81,9 +135,22 @@ CREATE DATABASE zerocode CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```yaml
 spring:
   datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/zerocode
     username: your_username
     password: your_password
+  # Redis 配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      password: 
+      ttl: 3600
+  # Session 配置
+  session:
+    store-type: redis
+    timeout: 2592000  # 30 天过期
 ```
 
 ### 启动项目
@@ -109,6 +176,13 @@ http://localhost:8123/api/doc.html
 - OpenAPI 规范: http://localhost:8123/api/v3/api-docs
 
 ## 核心功能
+
+### AI 代码生成
+项目集成了 LangChain4j，支持多种类型的代码生成：
+- **HTML 代码生成**: 根据描述生成 HTML 页面
+- **多文件代码生成**: 生成完整的项目结构，支持 Vue 项目
+- **流式响应**: 支持实时流式输出，提升用户体验
+- **工具集成**: 内置文件操作工具，支持代码的读取、写入和修改
 
 ### 权限控制
 项目实现了基于注解的权限控制：
@@ -137,6 +211,18 @@ public Result<UserVO> getUserById(@PathVariable long id) {
 ```java
 // 运行 MyBatisCodeGenerator
 ```
+
+### 网页截图
+集成 Selenium，支持网页截图功能：
+- 自动化浏览器控制
+- 高质量截图输出
+- 支持多种浏览器
+
+### 云存储
+集成腾讯云 COS，支持文件存储和管理：
+- 文件上传下载
+- 安全访问控制
+- 高可用性存储
 
 ## 开发指南
 
@@ -167,11 +253,23 @@ ThrowUtils.throwIf(condition, ErrorCode.PARAMS_ERROR);
 
 ### application.yml 主要配置项
 - `spring.datasource`: 数据库连接配置
+- `spring.data.redis`: Redis 连接配置
+- `spring.session`: Session 存储配置
 - `server.port`: 服务器端口 (默认: 8123)
 - `server.servlet.context-path`: API 路径前缀 (默认: /api)
 - `springdoc`: OpenAPI 文档配置
 - `knife4j`: Knife4j 配置
 - `xm.zerocode.salt`: 自定义盐值
+
+### AI 配置
+- `langchain4j.openai`: OpenAI API 配置
+- `langchain4j.community.redis`: Redis 聊天记忆配置
+
+### 腾讯云 COS 配置
+- `cos.region`: COS 地域
+- `cos.secret-id`: 访问密钥 ID
+- `cos.secret-key`: 访问密钥
+- `cos.bucket`: 存储桶名称
 
 ## 部署
 

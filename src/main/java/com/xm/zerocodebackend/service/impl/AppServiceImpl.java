@@ -181,6 +181,14 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         }).collect(Collectors.toList());
     }
 
+    /**
+     * 与应用交互，生成代码（流式）
+     *
+     * @param appId     应用 ID
+     * @param message   用户消息
+     * @param loginUser 登录用户
+     * @return Flux<String> 代码生成流
+     */
     @Override
     public Flux<String> chatToGenCode(Long appId, String message, User loginUser) {
         // 1. 参数校验

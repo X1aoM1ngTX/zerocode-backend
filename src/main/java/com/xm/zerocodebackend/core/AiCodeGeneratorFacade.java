@@ -24,7 +24,7 @@ import reactor.core.publisher.Flux;
 import java.io.File;
 
 /**
- * AI 代码生成外观类，组合生成和保存功能
+ * AI 代码生成门面类，组合代码生成和保存功能
  */
 @Slf4j
 @Service
@@ -40,7 +40,7 @@ public class AiCodeGeneratorFacade {
      *
      * @param userMessage     用户提示词
      * @param codeGenTypeEnum 生成类型
-     * @param appId           应用ID
+     * @param appId           应用 ID
      * @return 保存的目录
      */
     public File generateAndSaveCode(String userMessage, CodeGenTypeEnum codeGenTypeEnum, Long appId) {
@@ -72,7 +72,8 @@ public class AiCodeGeneratorFacade {
      *
      * @param userMessage     用户提示词
      * @param codeGenTypeEnum 生成类型
-     * @param appId           应用ID
+     * @param appId           应用 ID
+     * @return 保存的目录
      */
     public Flux<String> generateAndSaveCodeStream(String userMessage, CodeGenTypeEnum codeGenTypeEnum, Long appId) {
         if (codeGenTypeEnum == null) {
@@ -143,7 +144,7 @@ public class AiCodeGeneratorFacade {
      *
      * @param codeStream  代码流
      * @param codeGenType 代码生成类型
-     * @param appId       应用ID
+     * @param appId       应用 ID
      * @return 流式响应
      */
     private Flux<String> processCodeStream(Flux<String> codeStream, CodeGenTypeEnum codeGenType, Long appId) {
@@ -160,7 +161,7 @@ public class AiCodeGeneratorFacade {
                         Object parsedResult = CodeParserExecutor.executeParser(completeCode, codeGenType);
                         // 使用执行器保存代码
                         File savedDir = CodeFileSaverExecutor.executeSaver(parsedResult, codeGenType, appId);
-                        log.info("保存成功，路径为：" + savedDir.getAbsolutePath());
+                        log.info("保存成功，路径为：{}", savedDir.getAbsolutePath());
                     } catch (Exception e) {
                         log.error("保存失败: {}", e.getMessage());
                     }

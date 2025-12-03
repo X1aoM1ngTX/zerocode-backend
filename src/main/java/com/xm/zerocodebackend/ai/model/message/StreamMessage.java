@@ -11,5 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StreamMessage {
+
+    /**
+     * 消息类型
+     */
     private String type;
 }

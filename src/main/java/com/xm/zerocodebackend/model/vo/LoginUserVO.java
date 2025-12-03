@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 
 import lombok.Data;
 
+/**
+ * 登录用户视图对象
+ */
 @Data
 public class LoginUserVO implements Serializable {
 

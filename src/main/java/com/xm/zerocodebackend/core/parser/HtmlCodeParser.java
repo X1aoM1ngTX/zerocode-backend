@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 import com.xm.zerocodebackend.ai.model.HtmlCodeResult;
 
 /**
- * HTML 代码解析器
+ * HTML 单文件代码解析器
  */
 public class HtmlCodeParser implements CodeParser<HtmlCodeResult> {
 
@@ -28,7 +28,7 @@ public class HtmlCodeParser implements CodeParser<HtmlCodeResult> {
     }
 
     /**
-     * 提取HTML代码内容
+     * 提取 HTML 代码内容
      *
      * @param content 原始内容
      * @return HTML代码

@@ -34,7 +34,7 @@ public abstract class CodeFileSaverTemplate<T> {
         String baseDirPath = buildUniqueDir(appId);
         // 3. 保存文件（具体实现由子类提供）
         saveFiles(result, baseDirPath);
-        // 4. 返回目录文件对象
+        // 4. 返回文件目录对象
         return new File(baseDirPath);
     }
 

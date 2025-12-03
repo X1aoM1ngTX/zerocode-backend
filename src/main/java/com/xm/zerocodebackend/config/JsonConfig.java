@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 public class JsonConfig {
 
     /**
-     * 添加 Lang 转 JSON 精度丢失的配置
+     * 添加 Long 转 JSON 精度丢失的配置
      */
     @Bean
     public ObjectMapper jacksonObjectMapper(Jackson2ObjectMapperBuilder builder) {

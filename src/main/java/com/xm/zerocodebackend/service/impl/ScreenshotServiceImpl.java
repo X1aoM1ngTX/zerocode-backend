@@ -88,8 +88,7 @@ public class ScreenshotServiceImpl implements ScreenshotService {
     private void cleanupLocalFile(String localFilePath) {
         File localFile = new File(localFilePath);
         if (localFile.exists()) {
-            File parentDir = localFile.getParentFile();
-            FileUtil.del(parentDir);
+            FileUtil.del(localFile);
             log.info("本地截图文件已清理: {}", localFilePath);
         }
     }

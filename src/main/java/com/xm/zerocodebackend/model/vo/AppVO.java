@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 
 import lombok.Data;
 
+/**
+ * 应用视图对象
+ */
 @Data
 public class AppVO implements Serializable {
 

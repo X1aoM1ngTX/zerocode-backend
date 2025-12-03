@@ -50,10 +50,10 @@ public class CosManager {
         if (result != null) {
             // 构建访问URL
             String url = String.format("%s%s", cosClientConfig.getHost(), key);
-            log.info("文件上传 COS 成功: {} -> {}", file.getName(), url);
+            log.info("文件上传到 COS 成功：{} -> {}", file.getName(), url);
             return url;
         } else {
-            log.error("文件上传 COS 失败，返回结果为空");
+            log.error("文件上传到 COS 失败：{}，返回结果为空", file.getName());
             return null;
         }
     }

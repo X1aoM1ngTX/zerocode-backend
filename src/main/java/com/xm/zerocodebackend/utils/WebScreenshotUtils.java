@@ -31,7 +31,7 @@ public class WebScreenshotUtils {
 
     private static final WebDriver webDriver;
 
-    // 全局静态初始化，避免重复创建
+    // 全局静态初始化，避免重复初始化驱动程序：
     static {
         final int DEFAULT_WIDTH = 1600;
         final int DEFAULT_HEIGHT = 900;
@@ -48,7 +48,7 @@ public class WebScreenshotUtils {
      * 生成网页截图
      *
      * @param webUrl 网页URL
-     * @return 压缩后的截图文件路径，失败返回null
+     * @return 压缩后的截图文件路径，失败返回 null
      */
     public static String saveWebPageScreenshot(String webUrl) {
         if (StrUtil.isBlank(webUrl)) {
@@ -176,7 +176,7 @@ public class WebScreenshotUtils {
         try {
             // 创建等待页面加载对象
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            // 等待 document.readyState 为complete
+            // 等待 document.readyState 为 complete
             wait.until(webDriver -> ((JavascriptExecutor) webDriver)
                     .executeScript("return document.readyState")
                     .equals("complete"));
