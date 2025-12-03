@@ -2,11 +2,10 @@ package com.xm.zerocodebackend.ai;
 
 import dev.langchain4j.model.chat.StreamingChatModel;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.xm.zerocodebackend.ai.tools.FileWriteTool;
+import com.xm.zerocodebackend.ai.tools.ToolManager;
 import com.xm.zerocodebackend.exception.BusinessException;
 import com.xm.zerocodebackend.exception.ErrorCode;
 import com.xm.zerocodebackend.model.enums.CodeGenTypeEnum;
@@ -44,6 +43,9 @@ public class AiCodeGeneratorServiceFactory {
     @Resource
     private ChatHistoryService chatHistoryService;
 
+    @Resource
+    private ToolManager toolManager;
+
     /**
      * AI 服务实例缓存
      * 缓存策略：
@@ -79,7 +81,7 @@ public class AiCodeGeneratorServiceFactory {
      * @return AI 服务实例
      */
     public AiCodeGeneratorService getAiCodeGeneratorService(long appId, CodeGenTypeEnum codeGenType) {
-        String cacheKey = BuildCacheKey(appId, codeGenType);
+        String cacheKey = buildCacheKey(appId, codeGenType);
         log.debug("尝试获取AI服务实例，appId: {}, codeGenType: {}, cacheKey: {}", appId, codeGenType, cacheKey);
 
         return serviceCache.get(cacheKey, key -> {
@@ -121,7 +123,7 @@ public class AiCodeGeneratorServiceFactory {
                     yield AiServices.builder(AiCodeGeneratorService.class)
                             .streamingChatModel(reasoningStreamingChatModel)
                             .chatMemoryProvider(memoryId -> chatMemory)
-                            .tools(new FileWriteTool())
+                            .tools(toolManager.getAllTools())
                             .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
                                     toolExecutionRequest,
                                     "Error: there is no tool called " + toolExecutionRequest.name()))
@@ -166,7 +168,7 @@ public class AiCodeGeneratorServiceFactory {
      * @param codeGenType 代码生成类型
      * @return 缓存键
      */
-    private String BuildCacheKey(long appId, CodeGenTypeEnum codeGenType) {
+    private String buildCacheKey(long appId, CodeGenTypeEnum codeGenType) {
         return appId + "_" + codeGenType.getValue();
     }
 }
