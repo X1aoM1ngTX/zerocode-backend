@@ -39,7 +39,7 @@ public class ReasoningStreamingChatModelConfig {
      */
     @Bean
     @Scope("prototype")
-    public StreamingChatModel reasoningStreamingChatModel() {
+    public StreamingChatModel reasoningStreamingChatModelPrototype() {
         return OpenAiStreamingChatModel.builder()
                 .apiKey(apiKey)
                 .baseUrl(baseUrl)

@@ -108,34 +108,38 @@ public class AiCodeGeneratorFacade {
      * @return Flux<String> 流式响应
      */
     private Flux<String> processTokenStream(TokenStream tokenStream) {
-        return Flux.create(sink -> {
-            tokenStream
-                    // 处理部分响应
-                    .onPartialResponse((String partialResponse) -> {
-                        AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
-                        sink.next(JSONUtil.toJsonStr(aiResponseMessage));
-                    })
-                    // 处理工具调用信息
-                    .onPartialToolExecutionRequest((index, toolExecutionRequest) -> {
-                        ToolRequestMessage toolRequestMessage = new ToolRequestMessage(toolExecutionRequest);
-                        sink.next(JSONUtil.toJsonStr(toolRequestMessage));
-                    })
-                    // 处理工具执行完成信息
-                    .onToolExecuted((ToolExecution toolExecution) -> {
-                        ToolExecutedMessage toolExecutedMessage = new ToolExecutedMessage(toolExecution);
-                        sink.next(JSONUtil.toJsonStr(toolExecutedMessage));
-                    })
-                    // 处理完整响应
-                    .onCompleteResponse((ChatResponse response) -> {
-                        sink.complete();
-                    })
-                    // 处理错误
-                    .onError((Throwable error) -> {
-                        error.printStackTrace();
-                        sink.error(error);
-                    })
-                    .start();
-        });
+        return Flux.create(sink -> tokenStream
+                // 处理部分响应
+                .onPartialResponse((String partialResponse) -> {
+                    AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
+                    sink.next(JSONUtil.toJsonStr(aiResponseMessage));
+                })
+                // 处理工具调用信息
+                .onPartialToolExecutionRequest((index, toolExecutionRequest) -> {
+                    ToolRequestMessage toolRequestMessage = new ToolRequestMessage(toolExecutionRequest);
+                    sink.next(JSONUtil.toJsonStr(toolRequestMessage));
+                })
+                // 处理工具执行完成信息
+                .onToolExecuted((ToolExecution toolExecution) -> {
+                    ToolExecutedMessage toolExecutedMessage = new ToolExecutedMessage(toolExecution);
+                    sink.next(JSONUtil.toJsonStr(toolExecutedMessage));
+                })
+                // 处理完整响应
+                .onCompleteResponse((ChatResponse response) -> {
+                    // 检查响应是否为空，避免NullPointerException
+                    if (response != null && response.aiMessage() != null) {
+                        log.debug("收到完整响应，内容长度: {}", response.aiMessage().text().length());
+                    } else {
+                        log.debug("收到空的完整响应，这可能是正常的流式结束");
+                    }
+                    sink.complete();
+                })
+                // 处理错误
+                .onError((Throwable error) -> {
+                    error.printStackTrace();
+                    sink.error(error);
+                })
+                .start());
     }
 
 
@@ -149,10 +153,8 @@ public class AiCodeGeneratorFacade {
      */
     private Flux<String> processCodeStream(Flux<String> codeStream, CodeGenTypeEnum codeGenType, Long appId) {
         StringBuilder codeBuilder = new StringBuilder();
-        return codeStream.doOnNext(chunk -> {
-                    // 实时收集代码片段
-                    codeBuilder.append(chunk);
-                })
+        // 实时收集代码片段
+        return codeStream.doOnNext(codeBuilder::append)
                 .doOnComplete(() -> {
                     // 流式返回完成后保存代码
                     try {
