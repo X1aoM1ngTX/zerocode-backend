@@ -2,9 +2,8 @@ package com.xm.zerocodebackend.langgraph4j.node;
 
 import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
 
-import com.xm.zerocodebackend.langgraph4j.ai.ImageCollectionPlan;
 import com.xm.zerocodebackend.langgraph4j.ai.ImageCollectionPlanService;
-import com.xm.zerocodebackend.langgraph4j.ai.ImageCollectionService;
+import com.xm.zerocodebackend.langgraph4j.model.ImageCollectionPlan;
 import com.xm.zerocodebackend.langgraph4j.model.ImageResource;
 import com.xm.zerocodebackend.langgraph4j.tools.ImageSearchTool;
 import com.xm.zerocodebackend.langgraph4j.tools.LogoGeneratorTool;
@@ -105,4 +104,3 @@ public class ImageCollectorNode {
         });
     }
 }
-

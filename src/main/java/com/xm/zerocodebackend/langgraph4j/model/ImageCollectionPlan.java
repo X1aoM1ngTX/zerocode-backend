@@ -1,9 +1,10 @@
-package com.xm.zerocodebackend.langgraph4j.ai;
+package com.xm.zerocodebackend.langgraph4j.model;
 
 import lombok.Data;
 
 import java.io.Serializable;
 import java.util.List;
+
 
 @Data
 public class ImageCollectionPlan implements Serializable {

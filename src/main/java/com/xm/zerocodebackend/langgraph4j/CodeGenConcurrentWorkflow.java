@@ -1,5 +1,7 @@
 package com.xm.zerocodebackend.langgraph4j;
 
+import cn.hutool.core.thread.ExecutorBuilder;
+import cn.hutool.core.thread.ThreadFactoryBuilder;
 import com.xm.zerocodebackend.exception.BusinessException;
 import com.xm.zerocodebackend.exception.ErrorCode;
 import com.xm.zerocodebackend.langgraph4j.model.QualityResult;
@@ -8,14 +10,13 @@ import com.xm.zerocodebackend.langgraph4j.node.concurrent.*;
 import com.xm.zerocodebackend.langgraph4j.state.WorkflowContext;
 import com.xm.zerocodebackend.model.enums.CodeGenTypeEnum;
 import lombok.extern.slf4j.Slf4j;
-import org.bsc.langgraph4j.CompiledGraph;
-import org.bsc.langgraph4j.GraphRepresentation;
-import org.bsc.langgraph4j.GraphStateException;
-import org.bsc.langgraph4j.NodeOutput;
+import org.bsc.langgraph4j.*;
 import org.bsc.langgraph4j.prebuilt.MessagesState;
 import org.bsc.langgraph4j.prebuilt.MessagesStateGraph;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.bsc.langgraph4j.StateGraph.END;
 import static org.bsc.langgraph4j.StateGraph.START;
@@ -95,9 +96,19 @@ public class CodeGenConcurrentWorkflow {
         log.info("开始执行并发代码生成工作流");
         WorkflowContext finalContext = null;
         int stepCounter = 1;
+        // 配置并发执行
+        ExecutorService pool = ExecutorBuilder.create()
+                .setCorePoolSize(10)
+                .setMaxPoolSize(20)
+                .setWorkQueue(new LinkedBlockingQueue<>(100))
+                .setThreadFactory(ThreadFactoryBuilder.create().setNamePrefix("Parallel-Image-Collect").build())
+                .build();
+        RunnableConfig runnableConfig = RunnableConfig.builder()
+                .addParallelNodeExecutor("image_plan", pool)
+                .build();
         for (NodeOutput<MessagesState<String>> step : workflow.stream(
-                Map.of(WorkflowContext.WORKFLOW_CONTEXT_KEY, initialContext)
-        )) {
+                Map.of(WorkflowContext.WORKFLOW_CONTEXT_KEY, initialContext),
+                runnableConfig)) {
             log.info("--- 第 {} 步完成 ---", stepCounter);
             WorkflowContext currentContext = WorkflowContext.getContext(step.state());
             if (currentContext != null) {

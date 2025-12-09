@@ -1,5 +1,6 @@
 package com.xm.zerocodebackend.langgraph4j.ai;
 
+import com.xm.zerocodebackend.langgraph4j.model.ImageCollectionPlan;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 

@@ -5,7 +5,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import com.xm.zerocodebackend.langgraph4j.ai.ImageCollectionPlan;
+import com.xm.zerocodebackend.langgraph4j.model.ImageCollectionPlan;
 import com.xm.zerocodebackend.langgraph4j.model.ImageResource;
 import com.xm.zerocodebackend.langgraph4j.model.QualityResult;
 import com.xm.zerocodebackend.model.enums.CodeGenTypeEnum;

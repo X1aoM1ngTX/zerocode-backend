@@ -1,7 +1,6 @@
 package com.xm.zerocodebackend.langgraph4j.node.concurrent;
 
-import com.xm.zerocodebackend.langgraph4j.ai.ImageCollectionPlan;
-import com.xm.zerocodebackend.langgraph4j.ai.ImageCollectionPlanService;
+import com.xm.zerocodebackend.langgraph4j.model.ImageCollectionPlan;
 import com.xm.zerocodebackend.langgraph4j.model.ImageResource;
 import com.xm.zerocodebackend.langgraph4j.state.WorkflowContext;
 import com.xm.zerocodebackend.langgraph4j.tools.LogoGeneratorTool;
