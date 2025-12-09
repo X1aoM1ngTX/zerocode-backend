@@ -1,5 +1,6 @@
 package com.xm.zerocodebackend.ai;
 
+import com.xm.zerocodebackend.utils.SpringContextUtil;
 import dev.langchain4j.model.chat.StreamingChatModel;
 
 import org.springframework.context.annotation.Bean;
@@ -28,14 +29,8 @@ import java.time.Duration;
 @Configuration
 public class AiCodeGeneratorServiceFactory {
 
-    @Resource
+    @Resource(name = "openAiChatModel")
     private ChatModel chatModel;
-
-    @Resource
-    private StreamingChatModel openAiStreamingChatModel;
-
-    @Resource
-    private StreamingChatModel reasoningStreamingChatModel;
 
     @Resource
     private RedisChatMemoryStore redisChatMemoryStore;
@@ -119,6 +114,8 @@ public class AiCodeGeneratorServiceFactory {
             AiCodeGeneratorService service = switch (codeGenType) {
                 // Vue 项目生成使用推理模型
                 case VUE_PROJECT -> {
+                    // 使用多例模式的 StreamingChatModel 解决并发问题
+                    StreamingChatModel reasoningStreamingChatModel = SpringContextUtil.getBean("reasoningStreamingChatModelPrototype", StreamingChatModel.class);
                     log.info("为 appId: {} 创建Vue项目生成服务，使用推理模型", appId);
                     yield AiServices.builder(AiCodeGeneratorService.class)
                             .streamingChatModel(reasoningStreamingChatModel)
@@ -131,6 +128,8 @@ public class AiCodeGeneratorServiceFactory {
                 }
                 // HTML 和多文件生成使用默认模型
                 case HTML, MULTI_FILE -> {
+                    // 使用多例模式的 StreamingChatModel 解决并发问题
+                    StreamingChatModel openAiStreamingChatModel = SpringContextUtil.getBean("streamingChatModelPrototype", StreamingChatModel.class);
                     log.info("为 appId: {} 创建{}生成服务，使用默认模型", appId, codeGenType.getValue());
                     yield AiServices.builder(AiCodeGeneratorService.class)
                             .chatModel(chatModel)
