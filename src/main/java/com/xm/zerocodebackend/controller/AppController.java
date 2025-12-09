@@ -3,6 +3,7 @@ package com.xm.zerocodebackend.controller;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.cache.annotation.Cacheable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -173,7 +174,7 @@ public class AppController {
     @PostMapping("/list/my-apps")
     @Operation(summary = "分页获取当前用户创建的应用列表", description = "用户分页查询自己创建的应用列表")
     public BaseResponse<Page<AppVO>> listMyAppVOByPage(@RequestBody AppQueryRequest appQueryRequest,
-            HttpServletRequest request) {
+                                                       HttpServletRequest request) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "查询请求不能为空", "分页查询应用时查询请求不能为空");
         User loginUser = userService.getLoginUser(request);
         // 限制每页最多 20 个
@@ -198,6 +199,7 @@ public class AppController {
      * @return 精选应用列表
      */
     @PostMapping("/list/good-apps")
+    @Cacheable(value = "good_app_page", key = "T(com.xm.zerocodebackend.utils.CacheKeyUtils).generateKey(#appQueryRequest)", condition = "#appQueryRequest.current <= 10")
     @Operation(summary = "分页获取精选应用列表", description = "用户分页查询精选应用列表")
     public BaseResponse<Page<AppVO>> listGoodAppVOByPage(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "查询请求不能为空", "分页查询精选应用时查询请求不能为空");
@@ -315,8 +317,8 @@ public class AppController {
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "应用聊天生成代码（流式 SSE）", description = "用户与应用聊天生成代码，返回流式结果")
     public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
-            @RequestParam String message,
-            HttpServletRequest request) {
+                                                       @RequestParam String message,
+                                                       HttpServletRequest request) {
         // 参数校验
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 无效", "应用 ID 错误");
         ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空", "用户消息不能为空");
@@ -367,8 +369,8 @@ public class AppController {
      */
     @GetMapping("/download/{appId}")
     public void downloadAppCode(@PathVariable Long appId,
-            HttpServletRequest request,
-            HttpServletResponse response) {
+                                HttpServletRequest request,
+                                HttpServletResponse response) {
         // 1. 基础校验
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID无效", "应用 ID 不能为空且必须大于 0");
         // 2. 查询应用信息
