@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.xm.zerocodebackend.annotation.AuthCheck;
+import com.xm.zerocodebackend.ratelimit.annotation.RateLimit;
+import com.xm.zerocodebackend.ratelimit.enums.RateLimitType;
 import com.xm.zerocodebackend.common.BaseResponse;
 import com.xm.zerocodebackend.common.DeleteRequest;
 import com.xm.zerocodebackend.common.ResultUtils;
@@ -50,6 +52,7 @@ public class UserController {
      * 用户注册
      */
     @PostMapping("register")
+    @RateLimit(limitType = RateLimitType.IP, rate = 3, rateInterval = 300, message = "注册过于频繁，请5分钟后再试")
     @Operation(summary = "用户注册", description = "用户注册")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
@@ -64,6 +67,7 @@ public class UserController {
      * 用户登录
      */
     @PostMapping("/login")
+    @RateLimit(limitType = RateLimitType.IP, rate = 5, rateInterval = 300, message = "登录过于频繁，请5分钟后再试")
     @Operation(summary = "用户登录", description = "用户登录")
     public BaseResponse<LoginUserVO> userLogin(@RequestBody UserLoginRequest userLoginRequest,
             HttpServletRequest request) {

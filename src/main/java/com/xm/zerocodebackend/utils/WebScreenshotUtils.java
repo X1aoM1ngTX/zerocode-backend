@@ -57,7 +57,7 @@ public class WebScreenshotUtils {
         }
         try {
             // 创建临时目录
-            String rootPath = "E:/Local/desktop/Code/ZeroCode/zerocode-backend/tmp/screenshots"
+            String rootPath = System.getProperty("user.dir") + "/tmp/screenshots"
                     + File.separator + UUID.randomUUID().toString().substring(0, 8);
             FileUtil.mkdir(rootPath);
             // 图片后缀

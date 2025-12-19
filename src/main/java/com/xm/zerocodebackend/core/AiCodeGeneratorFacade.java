@@ -8,6 +8,8 @@ import com.xm.zerocodebackend.ai.model.MultiFileCodeResult;
 import com.xm.zerocodebackend.ai.model.message.AiResponseMessage;
 import com.xm.zerocodebackend.ai.model.message.ToolExecutedMessage;
 import com.xm.zerocodebackend.ai.model.message.ToolRequestMessage;
+import com.xm.zerocodebackend.constant.AppConstant;
+import com.xm.zerocodebackend.core.builder.VueProjectBuilder;
 import com.xm.zerocodebackend.core.parser.CodeParserExecutor;
 import com.xm.zerocodebackend.core.saver.CodeFileSaverExecutor;
 import com.xm.zerocodebackend.exception.BusinessException;
@@ -32,6 +34,9 @@ public class AiCodeGeneratorFacade {
 
     @Resource
     private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
+
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
 
     // -=== 结构化生成代码 ===-
 
@@ -92,7 +97,7 @@ public class AiCodeGeneratorFacade {
             }
             case VUE_PROJECT -> {
                 TokenStream tokenStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
-                yield processTokenStream(tokenStream);
+                yield processTokenStream(tokenStream, appId);
             }
             default -> {
                 String errorMessage = "不支持的生成类型：" + codeGenTypeEnum.getValue();
@@ -107,7 +112,7 @@ public class AiCodeGeneratorFacade {
      * @param tokenStream TokenStream 对象
      * @return Flux<String> 流式响应
      */
-    private Flux<String> processTokenStream(TokenStream tokenStream) {
+    private Flux<String> processTokenStream(TokenStream tokenStream, Long appId) {
         return Flux.create(sink -> tokenStream
                 // 处理部分响应
                 .onPartialResponse((String partialResponse) -> {
@@ -126,12 +131,9 @@ public class AiCodeGeneratorFacade {
                 })
                 // 处理完整响应
                 .onCompleteResponse((ChatResponse response) -> {
-                    // 检查响应是否为空，避免NullPointerException
-                    if (response != null && response.aiMessage() != null) {
-                        log.debug("收到完整响应，内容长度: {}", response.aiMessage().text().length());
-                    } else {
-                        log.debug("收到空的完整响应，这可能是正常的流式结束");
-                    }
+                    // 执行 Vue 项目构建（同步执行，确保预览时项目已就绪）
+                    String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + "vue_project_" + appId;
+                    vueProjectBuilder.buildProject(projectPath);
                     sink.complete();
                 })
                 // 处理错误

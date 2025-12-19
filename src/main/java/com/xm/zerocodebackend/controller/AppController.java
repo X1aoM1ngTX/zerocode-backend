@@ -1,5 +1,7 @@
 package com.xm.zerocodebackend.controller;
 
+import com.xm.zerocodebackend.ratelimit.annotation.RateLimit;
+import com.xm.zerocodebackend.ratelimit.enums.RateLimitType;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -39,7 +41,6 @@ import com.xm.zerocodebackend.model.dto.app.AppQueryRequest;
 import com.xm.zerocodebackend.model.dto.app.AppUpdateRequest;
 import com.xm.zerocodebackend.model.entity.App;
 import com.xm.zerocodebackend.model.entity.User;
-import com.xm.zerocodebackend.model.enums.CodeGenTypeEnum;
 import com.xm.zerocodebackend.model.vo.AppVO;
 import com.xm.zerocodebackend.service.AppService;
 import com.xm.zerocodebackend.service.ProjectDownloadService;
@@ -80,6 +81,7 @@ public class AppController {
      * @return 应用 id
      */
     @PostMapping("/add")
+    @RateLimit(limitType = RateLimitType.USER, rate = 3, rateInterval = 300, message = "创建应用过于频繁，请5分钟后再试")
     @Operation(summary = "创建应用", description = "用户创建应用")
     public BaseResponse<Long> addApp(@RequestBody AppAddRequest appAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appAddRequest == null, ErrorCode.PARAMS_ERROR, "创建应用请求不能为空", "创建应用时请求参数不能为空");
@@ -315,6 +317,7 @@ public class AppController {
      * @return 生成结果流
      */
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @RateLimit(limitType = RateLimitType.USER, rate = 5, rateInterval = 60 , message = "请勿频繁请求，请稍后再试")
     @Operation(summary = "应用聊天生成代码（流式 SSE）", description = "用户与应用聊天生成代码，返回流式结果")
     public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
                                                        @RequestParam String message,
@@ -348,6 +351,7 @@ public class AppController {
      * @return 部署 URL
      */
     @PostMapping("/deploy")
+    @RateLimit(limitType = RateLimitType.USER, rate = 2, rateInterval = 600, message = "部署过于频繁，请10分钟后再试")
     @Operation(summary = "应用部署", description = "用户部署应用，返回部署 URL")
     public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR);
@@ -368,6 +372,7 @@ public class AppController {
      * @param response 响应
      */
     @GetMapping("/download/{appId}")
+    @RateLimit(limitType = RateLimitType.USER, rate = 5, rateInterval = 300, message = "下载过于频繁，请5分钟后再试")
     public void downloadAppCode(@PathVariable Long appId,
                                 HttpServletRequest request,
                                 HttpServletResponse response) {

@@ -1,5 +1,7 @@
 package com.xm.zerocodebackend.ai;
 
+import com.xm.zerocodebackend.ai.guardrail.PromptSafetyInputGuardrail;
+import com.xm.zerocodebackend.ai.guardrail.RetryOutputGuardrail;
 import com.xm.zerocodebackend.utils.SpringContextUtil;
 import dev.langchain4j.model.chat.StreamingChatModel;
 
@@ -121,9 +123,12 @@ public class AiCodeGeneratorServiceFactory {
                             .streamingChatModel(reasoningStreamingChatModel)
                             .chatMemoryProvider(memoryId -> chatMemory)
                             .tools(toolManager.getAllTools())
+                            .maxSequentialToolsInvocations(20) // 允许连续最多 20 次工具调用
                             .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
                                     toolExecutionRequest,
                                     "Error: there is no tool called " + toolExecutionRequest.name()))
+                            .inputGuardrails(new PromptSafetyInputGuardrail())
+//                            .outputGuardrails(new RetryOutputGuardrail()) // 为了流式输出，这里暂时关闭重试功能
                             .build();
                 }
                 // HTML 和多文件生成使用默认模型
@@ -135,6 +140,8 @@ public class AiCodeGeneratorServiceFactory {
                             .chatModel(chatModel)
                             .streamingChatModel(openAiStreamingChatModel)
                             .chatMemory(chatMemory)
+                            .inputGuardrails(new PromptSafetyInputGuardrail())
+//                            .outputGuardrails(new RetryOutputGuardrail()) // 为了流式输出，这里暂时关闭重试功能
                             .build();
                 }
                 default -> throw new BusinessException(ErrorCode.UNSUPPORTED_TYPE,

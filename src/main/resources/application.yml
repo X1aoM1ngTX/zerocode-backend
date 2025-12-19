@@ -6,20 +6,6 @@ spring:
     store-type: redis
     # session 30 天过期
     timeout: 2592000
-  # mysql
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/zerocode
-    username: root
-    password: 123456
-  # redis
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      database: 0
-      password: 
-      ttl: 3600
   # environment
   profiles:
     active: dev
@@ -43,7 +29,3 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
-
-xm:
-  zerocode:
-    salt: xm.zerocode.25-11-24.KW7ZXQ
