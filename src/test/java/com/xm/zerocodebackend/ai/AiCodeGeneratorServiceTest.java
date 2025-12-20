@@ -6,7 +6,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.xm.zerocodebackend.ai.model.HtmlCodeResult;
 import com.xm.zerocodebackend.ai.model.MultiFileCodeResult;
+import com.xm.zerocodebackend.model.enums.CodeGenTypeEnum;
 
+import dev.langchain4j.service.TokenStream;
 import jakarta.annotation.Resource;
 
 @SpringBootTest
@@ -14,6 +16,9 @@ class AiCodeGeneratorServiceTest {
 
     @Resource
     private AiCodeGeneratorService aiCodeGeneratorService;
+
+    @Resource
+    private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
 
     @Test
     void generateHtmlCode() {
@@ -25,6 +30,17 @@ class AiCodeGeneratorServiceTest {
     void generateMultiFileCode() {
         MultiFileCodeResult multiFileCode = aiCodeGeneratorService.generateMultiFileCode("写一个最基础的页面，不超过50行");
         Assertions.assertNotNull(multiFileCode);
+    }
+
+    @Test
+    void generateReactProjectCodeStream() {
+        // 使用注入的工厂方法获取React项目服务实例
+        AiCodeGeneratorService reactService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(1L,
+                CodeGenTypeEnum.REACT_PROJECT);
+
+        TokenStream tokenStream = reactService.generateReactProjectCodeStream(1L,
+                "生成一个React项目，包含一个显示'Hello, World!'的页面，代码量不超过100行");
+        Assertions.assertNotNull(tokenStream);
     }
 
     @Test

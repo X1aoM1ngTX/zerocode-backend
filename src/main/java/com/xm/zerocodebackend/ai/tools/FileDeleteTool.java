@@ -1,12 +1,16 @@
 package com.xm.zerocodebackend.ai.tools;
 
 import com.xm.zerocodebackend.constant.AppConstant;
+import com.xm.zerocodebackend.service.AppService;
+import com.xm.zerocodebackend.model.entity.App;
 
 import cn.hutool.json.JSONObject;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.ToolMemoryId;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -22,6 +26,10 @@ import java.nio.file.Paths;
 @Component
 public class FileDeleteTool extends BaseTool {
 
+    @Resource
+    @Lazy
+    private AppService appService;
+
     @Tool("删除指定路径的文件")
     public String deleteFile(
             @P("文件的相对路径") String relativeFilePath,
@@ -29,9 +37,25 @@ public class FileDeleteTool extends BaseTool {
         try {
             Path path = Paths.get(relativeFilePath);
             if (!path.isAbsolute()) {
-                String projectDirName = "vue_project_" + appId;
-                Path projectRoot = Paths.get(AppConstant.CODE_OUTPUT_ROOT_DIR, projectDirName);
-                path = projectRoot.resolve(relativeFilePath);
+                // 查询应用信息获取项目类型
+                App app = appService.getById(appId);
+                String projectDirName;
+
+                if (app != null && app.getCodeGenType() != null) {
+                    // 根据数据库中的codeGenType字段确定项目类型
+                    String codeGenType = app.getCodeGenType().toLowerCase();
+                    if (codeGenType.contains("react")) {
+                        projectDirName = "react_project_" + appId;
+                    } else {
+                        // 默认使用vue
+                        projectDirName = "vue_project_" + appId;
+                    }
+                } else {
+                    // 如果没有查询到应用信息，默认使用vue
+                    projectDirName = "vue_project_" + appId;
+                }
+
+                path = Paths.get(AppConstant.CODE_OUTPUT_ROOT_DIR, projectDirName, relativeFilePath);
             }
             if (!Files.exists(path)) {
                 return "警告：文件不存在，无需删除 - " + relativeFilePath;
@@ -83,8 +107,13 @@ public class FileDeleteTool extends BaseTool {
     }
 
     @Override
+    public String getIconName() {
+        return "DeleteOutlined";
+    }
+
+    @Override
     public String generateToolExecutedResult(JSONObject arguments) {
         String relativeFilePath = arguments.getStr("relativeFilePath");
-        return String.format("[工具调用] %s %s", getDisplayName(), relativeFilePath);
+        return String.format("<SettingOutlined /> [工具调用] %s %s", getDisplayName(), relativeFilePath);
     }
 }

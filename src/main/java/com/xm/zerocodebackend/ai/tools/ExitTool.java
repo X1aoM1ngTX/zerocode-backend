@@ -32,6 +32,11 @@ public class ExitTool extends BaseTool {
     }
 
     @Override
+    public String getIconName() {
+        return "PoweroffOutlined";
+    }
+
+    @Override
     public String generateToolExecutedResult(JSONObject arguments) {
         return "\n\n[执行结束]\n\n";
     }

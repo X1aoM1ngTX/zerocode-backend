@@ -23,12 +23,19 @@ public abstract class BaseTool {
     public abstract String getDisplayName();
 
     /**
+     * 获取工具对应的 Ant Design Vue 图标组件名
+     *
+     * @return 图标组件名
+     */
+    public abstract String getIconName();
+
+    /**
      * 生成工具请求时的返回值（显示给用户）
      *
      * @return 工具请求显示内容
      */
     public String generateToolRequestResponse() {
-        return String.format("\n\n[选择工具] %s\n\n", getDisplayName());
+        return String.format("\n\n<%s /> [选择工具] %s\n\n", getIconName(), getDisplayName());
     }
 
     /**

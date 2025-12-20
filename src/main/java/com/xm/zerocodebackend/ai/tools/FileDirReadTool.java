@@ -5,13 +5,18 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 
 import com.xm.zerocodebackend.constant.AppConstant;
+import com.xm.zerocodebackend.service.AppService;
+import com.xm.zerocodebackend.model.entity.App;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.ToolMemoryId;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -25,33 +30,49 @@ import java.util.Set;
 @Component
 public class FileDirReadTool extends BaseTool {
 
+    @Resource
+    @Lazy
+    private AppService appService;
+
     /**
      * 需要忽略的文件和目录
      */
     private static final Set<String> IGNORED_NAMES = Set.of(
             "node_modules", ".git", "dist", "build", ".DS_Store",
-            ".env", "target", ".mvn", ".idea", ".vscode", "coverage"
-    );
+            ".env", "target", ".mvn", ".idea", ".vscode", "coverage");
 
     /**
      * 需要忽略的文件扩展名
      */
     private static final Set<String> IGNORED_EXTENSIONS = Set.of(
-            ".log", ".tmp", ".cache", ".lock"
-    );
+            ".log", ".tmp", ".cache", ".lock");
 
     @Tool("读取目录结构，获取指定目录下的所有文件和子目录信息")
     public String readDir(
-            @P("目录的相对路径，为空则读取整个项目结构")
-            String relativeDirPath,
-            @ToolMemoryId Long appId
-    ) {
+            @P("目录的相对路径，为空则读取整个项目结构") String relativeDirPath,
+            @ToolMemoryId Long appId) {
         try {
             Path path = Paths.get(relativeDirPath == null ? "" : relativeDirPath);
             if (!path.isAbsolute()) {
-                String projectDirName = "vue_project_" + appId;
-                Path projectRoot = Paths.get(AppConstant.CODE_OUTPUT_ROOT_DIR, projectDirName);
-                path = projectRoot.resolve(relativeDirPath == null ? "" : relativeDirPath);
+                // 查询应用信息获取项目类型
+                App app = appService.getById(appId);
+                String projectDirName;
+
+                if (app != null && app.getCodeGenType() != null) {
+                    // 根据数据库中的codeGenType字段确定项目类型
+                    String codeGenType = app.getCodeGenType().toLowerCase();
+                    if (codeGenType.contains("react")) {
+                        projectDirName = "react_project_" + appId;
+                    } else {
+                        // 默认使用vue
+                        projectDirName = "vue_project_" + appId;
+                    }
+                } else {
+                    // 如果没有查询到应用信息，默认使用vue
+                    projectDirName = "vue_project_" + appId;
+                }
+
+                path = Paths.get(AppConstant.CODE_OUTPUT_ROOT_DIR, projectDirName, relativeDirPath == null ? "" : relativeDirPath);
             }
             File targetDir = path.toFile();
             if (!targetDir.exists() || !targetDir.isDirectory()) {
@@ -115,6 +136,11 @@ public class FileDirReadTool extends BaseTool {
     @Override
     public String getDisplayName() {
         return "读取目录";
+    }
+
+    @Override
+    public String getIconName() {
+        return "FolderOpenOutlined";
     }
 
     @Override

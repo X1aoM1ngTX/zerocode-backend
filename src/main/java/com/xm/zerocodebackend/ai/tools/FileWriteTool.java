@@ -7,13 +7,17 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 import com.xm.zerocodebackend.constant.AppConstant;
+import com.xm.zerocodebackend.service.AppService;
+import com.xm.zerocodebackend.model.entity.App;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONObject;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.ToolMemoryId;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,6 +28,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class FileWriteTool extends BaseTool {
 
+    @Resource
+    @Lazy
+    private AppService appService;
+
     @Tool("写入文件到指定路径")
     public String writeFile(
             @P("文件的相对路径") String relativeFilePath,
@@ -32,10 +40,25 @@ public class FileWriteTool extends BaseTool {
         try {
             Path path = Paths.get(relativeFilePath);
             if (!path.isAbsolute()) {
-                // 相对路径处理，创建基于 appId 的项目目录
-                String projectDirName = "vue_project_" + appId;
-                Path projectRoot = Paths.get(AppConstant.CODE_OUTPUT_ROOT_DIR, projectDirName);
-                path = projectRoot.resolve(relativeFilePath);
+                // 查询应用信息获取项目类型
+                App app = appService.getById(appId);
+                String projectDirName;
+
+                if (app != null && app.getCodeGenType() != null) {
+                    // 根据数据库中的codeGenType字段确定项目类型
+                    String codeGenType = app.getCodeGenType().toLowerCase();
+                    if (codeGenType.contains("react")) {
+                        projectDirName = "react_project_" + appId;
+                    } else {
+                        // 默认使用vue
+                        projectDirName = "vue_project_" + appId;
+                    }
+                } else {
+                    // 如果没有查询到应用信息，默认使用vue
+                    projectDirName = "vue_project_" + appId;
+                }
+
+                path = Paths.get(AppConstant.CODE_OUTPUT_ROOT_DIR, projectDirName, relativeFilePath);
             }
             // 创建父目录（如果不存在）
             Path parentDir = path.getParent();
@@ -64,6 +87,11 @@ public class FileWriteTool extends BaseTool {
     @Override
     public String getDisplayName() {
         return "写入文件";
+    }
+
+    @Override
+    public String getIconName() {
+        return "EditOutlined";
     }
 
     @Override

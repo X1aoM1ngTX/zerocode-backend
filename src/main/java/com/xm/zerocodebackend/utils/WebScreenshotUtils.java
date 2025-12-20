@@ -57,7 +57,7 @@ public class WebScreenshotUtils {
         }
         try {
             // 创建临时目录
-            String rootPath = System.getProperty("user.dir") + "/tmp/screenshots"
+            String rootPath = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "screenshots"
                     + File.separator + UUID.randomUUID().toString().substring(0, 8);
             FileUtil.mkdir(rootPath);
             // 图片后缀
@@ -86,7 +86,7 @@ public class WebScreenshotUtils {
             return null;
         }
     }
- 
+
     /**
      * 初始化 Chrome 浏览器驱动
      * 
@@ -97,7 +97,8 @@ public class WebScreenshotUtils {
     private static WebDriver initChromeDriver(int width, int height) {
         try {
             // 自动管理 ChromeDriver
-            System.setProperty("wdm.chromeDriverMirrorUrl", "https://registry.npmmirror.com/binary.html?path=chromedriver");
+            System.setProperty("wdm.chromeDriverMirrorUrl",
+                    "https://registry.npmmirror.com/binary.html?path=chromedriver");
             WebDriverManager.chromedriver().useMirror().setup();
             // 配置 Chrome 选项
             ChromeOptions options = new ChromeOptions();

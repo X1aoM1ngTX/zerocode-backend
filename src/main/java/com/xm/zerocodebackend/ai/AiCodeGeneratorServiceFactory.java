@@ -114,11 +114,11 @@ public class AiCodeGeneratorServiceFactory {
 
             // 根据代码生成类型选择不同的模型配置
             AiCodeGeneratorService service = switch (codeGenType) {
-                // Vue 项目生成使用推理模型
-                case VUE_PROJECT -> {
+                // Vue 和 React 项目生成使用推理模型
+                case VUE_PROJECT, REACT_PROJECT -> {
                     // 使用多例模式的 StreamingChatModel 解决并发问题
                     StreamingChatModel reasoningStreamingChatModel = SpringContextUtil.getBean("reasoningStreamingChatModelPrototype", StreamingChatModel.class);
-                    log.info("为 appId: {} 创建Vue项目生成服务，使用推理模型", appId);
+                    log.info("为 appId: {} 创建{}项目生成服务，使用推理模型", appId, codeGenType.getValue());
                     yield AiServices.builder(AiCodeGeneratorService.class)
                             .streamingChatModel(reasoningStreamingChatModel)
                             .chatMemoryProvider(memoryId -> chatMemory)

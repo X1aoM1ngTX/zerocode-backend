@@ -12,6 +12,7 @@ import com.xm.zerocodebackend.ai.AiCodeGenTypeRoutingServiceFactory;
 import com.xm.zerocodebackend.constant.AppConstant;
 import com.xm.zerocodebackend.core.AiCodeGeneratorFacade;
 import com.xm.zerocodebackend.core.builder.VueProjectBuilder;
+import com.xm.zerocodebackend.core.builder.ReactProjectBuilder;
 import com.xm.zerocodebackend.core.handler.StreamHandlerExecutor;
 import com.xm.zerocodebackend.exception.BusinessException;
 import com.xm.zerocodebackend.exception.ErrorCode;
@@ -67,6 +68,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private VueProjectBuilder vueProjectBuilder;
+
+    @Resource
+    private ReactProjectBuilder reactProjectBuilder;
 
     @Resource
     private ScreenshotService screenshotService;
@@ -255,7 +259,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (!sourceDir.exists() || !sourceDir.isDirectory()) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "应用代码不存在", "应用代码不存在，请先生成代码");
         }
-        // 7. Vue 项目特殊处理，执行构建
+        // 7. Vue 和 React 项目特殊处理，执行构建
         CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
         if (codeGenTypeEnum == CodeGenTypeEnum.VUE_PROJECT) {
             boolean buildSuccess = vueProjectBuilder.buildProject(sourceDirPath);
@@ -266,6 +270,15 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             // 构建完成后，将构建生成的 dist 目录复制到部署目录
             sourceDir = distDir;
             log.info("Vue项目构建成功，将部署dist目录：{}", sourceDir.getAbsolutePath());
+        } else if (codeGenTypeEnum == CodeGenTypeEnum.REACT_PROJECT) {
+            boolean buildSuccess = reactProjectBuilder.buildProject(sourceDirPath);
+            ThrowUtils.throwIf(!buildSuccess, ErrorCode.OPERATION_ERROR, "React 项目构建失败", "React 项目构建失败，请重新部署");
+            File distDir = new File(sourceDirPath, "dist");
+            ThrowUtils.throwIf(!distDir.exists() || !distDir.isDirectory(),
+                    ErrorCode.OPERATION_ERROR, "React 项目构建结果不存在", "React 项目构建完成但未生成 dist 目录");
+            // 构建完成后，将构建生成的 dist 目录复制到部署目录
+            sourceDir = distDir;
+            log.info("React项目构建成功，将部署dist目录：{}", sourceDir.getAbsolutePath());
         }
         // 8. 复制文件到部署目录
         String deployDirPath = AppConstant.CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;

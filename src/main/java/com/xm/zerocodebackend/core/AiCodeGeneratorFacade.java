@@ -9,6 +9,7 @@ import com.xm.zerocodebackend.ai.model.message.AiResponseMessage;
 import com.xm.zerocodebackend.ai.model.message.ToolExecutedMessage;
 import com.xm.zerocodebackend.ai.model.message.ToolRequestMessage;
 import com.xm.zerocodebackend.constant.AppConstant;
+import com.xm.zerocodebackend.core.builder.ReactProjectBuilder;
 import com.xm.zerocodebackend.core.builder.VueProjectBuilder;
 import com.xm.zerocodebackend.core.parser.CodeParserExecutor;
 import com.xm.zerocodebackend.core.saver.CodeFileSaverExecutor;
@@ -38,6 +39,9 @@ public class AiCodeGeneratorFacade {
     @Resource
     private VueProjectBuilder vueProjectBuilder;
 
+    @Resource
+    private ReactProjectBuilder reactProjectBuilder;
+
     // -=== 结构化生成代码 ===-
 
     /**
@@ -53,7 +57,8 @@ public class AiCodeGeneratorFacade {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成类型为空", "生成代码时必须指定生成类型");
         }
         // 根据 appId 获取相应的 AI 服务实例
-        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId, codeGenTypeEnum);
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId,
+                codeGenTypeEnum);
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 HtmlCodeResult result = aiCodeGeneratorService.generateHtmlCode(userMessage);
@@ -85,7 +90,8 @@ public class AiCodeGeneratorFacade {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成类型为空", "生成代码时必须指定生成类型");
         }
         // 根据 appId 获取相应的 AI 服务实例
-        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId, codeGenTypeEnum);
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId,
+                codeGenTypeEnum);
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 Flux<String> codeStream = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);
@@ -97,7 +103,11 @@ public class AiCodeGeneratorFacade {
             }
             case VUE_PROJECT -> {
                 TokenStream tokenStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
-                yield processTokenStream(tokenStream, appId);
+                yield processTokenStream(tokenStream, CodeGenTypeEnum.VUE_PROJECT, appId);
+            }
+            case REACT_PROJECT -> {
+                TokenStream tokenStream = aiCodeGeneratorService.generateReactProjectCodeStream(appId, userMessage);
+                yield processTokenStream(tokenStream, CodeGenTypeEnum.REACT_PROJECT, appId);
             }
             default -> {
                 String errorMessage = "不支持的生成类型：" + codeGenTypeEnum.getValue();
@@ -110,9 +120,11 @@ public class AiCodeGeneratorFacade {
      * 将 TokenStream 转换为 Flux<String>，并传递工具调用信息
      *
      * @param tokenStream TokenStream 对象
+     * @param codeGenType 代码生成类型
+     * @param appId 应用 ID
      * @return Flux<String> 流式响应
      */
-    private Flux<String> processTokenStream(TokenStream tokenStream, Long appId) {
+    private Flux<String> processTokenStream(TokenStream tokenStream, CodeGenTypeEnum codeGenType, Long appId) {
         return Flux.create(sink -> tokenStream
                 // 处理部分响应
                 .onPartialResponse((String partialResponse) -> {
@@ -131,9 +143,22 @@ public class AiCodeGeneratorFacade {
                 })
                 // 处理完整响应
                 .onCompleteResponse((ChatResponse response) -> {
-                    // 执行 Vue 项目构建（同步执行，确保预览时项目已就绪）
-                    String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + "vue_project_" + appId;
-                    vueProjectBuilder.buildProject(projectPath);
+                    // 根据代码生成类型选择相应的构建器
+                    switch (codeGenType) {
+                        case VUE_PROJECT -> {
+                            String vueProjectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + "vue_project_" + appId;
+                            vueProjectBuilder.buildProject(vueProjectPath);
+                            log.info("Vue 项目构建完成，路径: {}", vueProjectPath);
+                        }
+                        case REACT_PROJECT -> {
+                            String reactProjectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + "react_project_" + appId;
+                            reactProjectBuilder.buildProject(reactProjectPath);
+                            log.info("React 项目构建完成，路径: {}", reactProjectPath);
+                        }
+                        default -> {
+                            log.warn("未知的代码生成类型: {}", codeGenType.getValue());
+                        }
+                    }
                     sink.complete();
                 })
                 // 处理错误
@@ -143,7 +168,6 @@ public class AiCodeGeneratorFacade {
                 })
                 .start());
     }
-
 
     /**
      * 通用流式代码处理方法
