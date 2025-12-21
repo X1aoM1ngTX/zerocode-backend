@@ -1,0 +1,103 @@
+spring:
+  # mysql
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://your-mysql-host:3306/your-production-database
+    username: your-production-username # please change it in production
+    password: your-production-password # please change it in production
+  # redis
+  data:
+    redis:
+      host: your-redis-host
+      port: 6379
+      database: 0
+      password: your-redis-password # please change it in production
+      ttl: 3600
+      timeout: 10000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+        shutdown-timeout: 100ms
+
+xm:
+  zerocode:
+    salt: anything-you-like # please change it in production
+
+# 生产环境关闭日志
+mybatis-flex:
+  configuration:
+    log-impl: ''
+
+# 接口文档配置
+knife4j:
+  basic:
+    enable: true
+    username: root
+    password: 123456 # please change it in production
+
+# 部署路径
+code:
+  deploy-host: https://your-website/dist
+
+# AI
+langchain4j:
+  open-ai:
+    # 对话 AI 模型配置
+    chat-model:
+      base-url: llm-api.example.com/v1/chat/completions
+      api-key: your-api-key
+      model-name: model-name
+      log-requests: true
+      log-responses: true
+      timeout: PT4M
+      max-tokens: 131072
+      strict-json-schema: true
+      response-format: json_object
+    # 流式对话 AI 模型配置
+    streaming-chat-model:
+      base-url: llm-api.example.com/v1/chat/completions
+      api-key: your-api-key
+      model-name: model-name
+      log-requests: true
+      log-responses: true
+      max-tokens: 131072
+      timeout: PT4M
+      strict-json-schema: false
+    # 推理 AI 模型配置（用于复杂的推理任务）
+    reasoning-streaming-chat-model:
+      base-url: llm-api.example.com/v1/chat/completions
+      api-key: your-api-key
+      model-name: model-name
+      max-tokens: 131072
+      temperature: 0.1
+      timeout: PT4M
+      log-requests: true
+      log-responses: true
+    # 智能路由 AI 模型配置（用于简单的分类任务）
+    routing-chat-model:
+      base-url: llm-api.example.com/v1/chat/completions
+      api-key: your-api-key
+      model-name: model-name
+      log-requests: true
+      log-responses: true
+
+# COS 对象存储配置
+cos:
+  client:
+    host: cos.example.com
+    secretId: your-secret-id
+    secretKey: your-secret-key
+    region: your-region
+    bucket: your-bucket-name
+
+# Pexels 图片搜索配置
+pexels:
+  api-key: your-pexels-api-key
+
+# 阿里云 DashScope 配置
+dashscope:
+  api-key: your-dashscope-api-key
+  image-model: wan2.2-t2i-flash # or other model you like
