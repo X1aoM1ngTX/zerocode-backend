@@ -1,11 +1,11 @@
 # ZeroCode Backend
 
-ZeroCode 后端项目，基于 Spring Boot 3 构建的现代化 Java 后端服务，集成 AI 代码生成功能。
+ZeroCode 后端项目，基于 Spring Boot 3 构建的现代化 Java 后端服务，集成 AI 代码生成功能，为零代码开发平台提供强大的 API 支撑。
 
 ## 技术栈
 
 - **框架**: Spring Boot 3.5.8
-- **数据库**: MySQL
+- **数据库**: MySQL 8.0+
 - **ORM**: MyBatis-Flex 1.11.0
 - **连接池**: HikariCP
 - **缓存**: Redis + Spring Session
@@ -17,6 +17,7 @@ ZeroCode 后端项目，基于 Spring Boot 3 构建的现代化 Java 后端服�
 - **网页截图**: Selenium 4.33.0
 - **云存储**: 腾讯云 COS 5.6.227
 - **本地缓存**: Caffeine
+- **身份验证**: JWT + Spring Security
 
 ## 项目结构
 
@@ -129,6 +130,8 @@ CREATE DATABASE zerocode CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 2. 执行 SQL 脚本：
 ```bash
 # 位于 src/main/resources/sql/create_user.sql
+# 位于 src/main/resources/sql/create_app.sql
+# 位于 src/main/resources/sql/create_chat_history.sql
 ```
 
 3. 修改配置文件 `src/main/resources/application.yml` 中的数据库连接信息：
@@ -145,7 +148,7 @@ spring:
       host: localhost
       port: 6379
       database: 0
-      password: 
+      password:
       ttl: 3600
   # Session 配置
   session:
@@ -169,6 +172,12 @@ mvn spring-boot:run
 http://localhost:8123/api/doc.html
 ```
 
+### 环境变量配置
+在 `src/main/resources/application.yml` 中配置以下必要的环境变量：
+- OpenAI API Key (用于 AI 代码生成)
+- 腾讯云 COS 配置 (用于文件存储)
+- 自定义盐值 (用于密码加密)
+
 ## API 文档
 
 项目集成了 Knife4j，提供了交互式的 API 文档。启动项目后访问：
@@ -177,14 +186,32 @@ http://localhost:8123/api/doc.html
 
 ## 核心功能
 
-### AI 代码生成
+### 1. AI 代码生成
 项目集成了 LangChain4j，支持多种类型的代码生成：
 - **HTML 代码生成**: 根据描述生成 HTML 页面
 - **多文件代码生成**: 生成完整的项目结构，支持 Vue 项目
 - **流式响应**: 支持实时流式输出，提升用户体验
 - **工具集成**: 内置文件操作工具，支持代码的读取、写入和修改
+- **智能解析**: 自动解析 AI 生成的代码并保存为文件
 
-### 权限控制
+### 2. 用户管理
+- 用户注册、登录、权限管理
+- 支持管理员和普通用户角色
+- JWT 身份验证和授权
+- 基于注解的权限控制
+
+### 3. 应用管理
+- 创建、编辑、删除应用
+- 应用部署和发布
+- 应用版本管理
+- 应用状态跟踪
+
+### 4. 聊天历史
+- 保存用户与 AI 的对话历史
+- 支持分页查询
+- 消息类型分类（用户/系统）
+
+### 5. 权限控制
 项目实现了基于注解的权限控制：
 ```java
 @AuthCheck(mustRole = UserRoleEnum.ADMIN)
@@ -193,9 +220,9 @@ public Result<UserVO> getUserById(@PathVariable long id) {
 }
 ```
 
-### 统一响应格式
+### 6. 统一响应格式
 所有 API 响应都采用统一格式：
-```java
+```json
 {
     "code": 0,
     "data": {},
@@ -203,26 +230,32 @@ public Result<UserVO> getUserById(@PathVariable long id) {
 }
 ```
 
-### 全局异常处理
+### 7. 全局异常处理
 通过 `@ControllerAdvice` 实现全局异常处理，统一返回错误信息。
 
-### 代码生成
+### 8. 代码生成
 使用 MyBatis-Flex 代码生成器快速生成实体和 Mapper：
 ```java
 // 运行 MyBatisCodeGenerator
 ```
 
-### 网页截图
+### 9. 网页截图
 集成 Selenium，支持网页截图功能：
 - 自动化浏览器控制
 - 高质量截图输出
 - 支持多种浏览器
 
-### 云存储
+### 10. 云存储
 集成腾讯云 COS，支持文件存储和管理：
 - 文件上传下载
 - 安全访问控制
 - 高可用性存储
+
+### 11. 项目下载
+支持将生成的项目打包下载：
+- ZIP 格式打包
+- 包含完整项目结构
+- 支持多种项目类型
 
 ## 开发指南
 
@@ -298,17 +331,73 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 ./mvnw test
 ```
 
+## API 接口说明
+
+### 用户相关接口
+- `POST /api/user/register` - 用户注册
+- `POST /api/user/login` - 用户登录
+- `GET /api/user/get/login` - 获取当前登录用户
+- `GET /api/user/get/{id}` - 获取用户信息（管理员）
+- `GET /api/user/list/page` - 分页获取用户列表（管理员）
+- `DELETE /api/user/delete` - 删除用户（管理员）
+
+### 应用相关接口
+- `POST /api/app/add` - 创建应用
+- `GET /api/app/get/{id}` - 获取应用详情
+- `GET /api/app/list/page` - 分页获取应用列表
+- `POST /api/app/update` - 更新应用
+- `DELETE /api/app/delete` - 删除应用
+- `GET /api/app/download/{id}` - 下载应用代码
+
+### AI 代码生成接口
+- `POST /api/app/chat` - AI 对话生成代码（流式）
+- `POST /api/app/generate/html` - 生成 HTML 代码
+- `POST /api/app/generate/multi-file` - 生成多文件项目
+
+### 聊天历史接口
+- `GET /api/chat-history/list/page` - 获取聊天历史列表
+- `GET /api/chat-history/get/{appId}` - 获取应用聊天历史
+- `DELETE /api/chat-history/delete` - 删除聊天历史
+
 ## 常见问题
 
 ### 数据库连接失败
 - 检查数据库服务是否启动
 - 确认连接配置正确
 - 检查防火墙设置
+- 确认数据库字符集为 utf8mb4
+
+### AI 代码生成失败
+- 检查 OpenAI API Key 是否配置正确
+- 确认网络连接正常
+- 检查 API 使用额度是否充足
+
+### 文件上传失败
+- 检查腾讯云 COS 配置是否正确
+- 确认存储桶权限设置
+- 检查文件大小限制
 
 ### API 文档无法访问
 - 确认项目启动成功
 - 检查端口是否被占用
 - 访问正确的 URL 路径
+
+## 开发注意事项
+
+1. **代码规范**
+   - 所有返回给前端的错误信息使用中文
+   - 遵循 RESTful API 设计原则
+   - 使用 @AuthCheck 注解进行权限控制
+
+2. **安全性**
+   - 密码使用加盐哈希存储
+   - JWT Token 设置合理过期时间
+   - API 接口进行参数校验
+
+3. **性能优化**
+   - 合理使用 Redis 缓存
+   - 数据库查询使用索引
+   - 大文件操作使用流式处理
 
 ## 贡献指南
 
@@ -317,3 +406,7 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 开启 Pull Request
+
+## 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](../LICENSE) 文件了解详情
