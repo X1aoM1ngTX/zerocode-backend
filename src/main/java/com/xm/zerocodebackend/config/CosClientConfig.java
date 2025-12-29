@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 腾讯云COS配置类
  *
- * @author yupi
+ * @author X1aoM1ngTX
  */
 @Data
 @Configuration

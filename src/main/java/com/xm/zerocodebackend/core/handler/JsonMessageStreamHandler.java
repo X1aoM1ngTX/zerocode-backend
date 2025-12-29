@@ -1,6 +1,5 @@
 package com.xm.zerocodebackend.core.handler;
 
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -10,7 +9,6 @@ import com.xm.zerocodebackend.ai.tools.ToolManager;
 import jakarta.annotation.Resource;
 
 import com.xm.zerocodebackend.ai.model.message.*;
-import com.xm.zerocodebackend.constant.AppConstant;
 import com.xm.zerocodebackend.core.builder.VueProjectBuilder;
 import com.xm.zerocodebackend.model.entity.User;
 import com.xm.zerocodebackend.model.enums.ChatHistoryMessageTypeEnum;

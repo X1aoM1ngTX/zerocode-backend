@@ -39,10 +39,12 @@ import com.xm.zerocodebackend.model.dto.app.AppAdminUpdateRequest;
 import com.xm.zerocodebackend.model.dto.app.AppDeployRequest;
 import com.xm.zerocodebackend.model.dto.app.AppQueryRequest;
 import com.xm.zerocodebackend.model.dto.app.AppUpdateRequest;
+import com.xm.zerocodebackend.model.dto.prompt.PromptOptimizeRequest;
 import com.xm.zerocodebackend.model.entity.App;
 import com.xm.zerocodebackend.model.entity.User;
 import com.xm.zerocodebackend.model.vo.AppVO;
 import com.xm.zerocodebackend.service.AppService;
+import com.xm.zerocodebackend.ai.PromptOptimizerService;
 import com.xm.zerocodebackend.service.ProjectDownloadService;
 import com.xm.zerocodebackend.service.UserService;
 
@@ -73,6 +75,9 @@ public class AppController {
     @Resource
     private ProjectDownloadService projectDownloadService;
 
+    @Resource
+    private PromptOptimizerService promptOptimizerService;
+
     /**
      * 创建应用
      *
@@ -89,6 +94,24 @@ public class AppController {
         User loginUser = userService.getLoginUser(request);
         Long appId = appService.createApp(appAddRequest, loginUser);
         return ResultUtils.success(appId);
+    }
+
+    /**
+     * AI优化提示词
+     *
+     * @param promptOptimizeRequest 提示词优化请求
+     * @return 优化后的提示词
+     */
+    @PostMapping("/optimize-prompt")
+    @RateLimit(limitType = RateLimitType.USER, rate = 10, rateInterval = 60, message = "优化提示词过于频繁，请稍后再试")
+    @Operation(summary = "AI优化提示词", description = "使用AI优化用户的提示词，使其更适合代码生成")
+    public BaseResponse<String> optimizePrompt(@RequestBody PromptOptimizeRequest promptOptimizeRequest) {
+        ThrowUtils.throwIf(promptOptimizeRequest == null, ErrorCode.PARAMS_ERROR, "请求不能为空", "提示词优化请求不能为空");
+        String originalPrompt = promptOptimizeRequest.getOriginalPrompt();
+        ThrowUtils.throwIf(StrUtil.isBlank(originalPrompt), ErrorCode.PARAMS_ERROR, "原始提示词不能为空", "原始提示词不能为空");
+        // 调用AI服务优化提示词
+        String optimizedPrompt = promptOptimizerService.optimizePrompt(originalPrompt);
+        return ResultUtils.success(optimizedPrompt);
     }
 
     /**

@@ -4,6 +4,8 @@ import com.xm.zerocodebackend.common.BaseResponse;
 import com.xm.zerocodebackend.common.ResultUtils;
 import com.xm.zerocodebackend.model.dto.image.ImageGenerateRequest;
 import com.xm.zerocodebackend.model.dto.image.ImageGenerateResponse;
+import com.xm.zerocodebackend.ratelimit.annotation.RateLimit;
+import com.xm.zerocodebackend.ratelimit.enums.RateLimitType;
 import com.xm.zerocodebackend.service.ZImageTurboService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +37,7 @@ public class ImageController {
      * @return 图像生成响应
      */
     @Operation(summary = "生成图像", description = "使用阿里云 Z-Image-Turbo 模型生成图像")
+    @RateLimit(limitType = RateLimitType.IP, rate = 8, rateInterval = 3600, message = "每小时最多生成8张图片，请稍后再试")
     @PostMapping("/generate")
     public BaseResponse<ImageGenerateResponse> generateImage(@Valid @RequestBody ImageGenerateRequest request) {
         ImageGenerateResponse response = zImageTurboService.generateImage(request);

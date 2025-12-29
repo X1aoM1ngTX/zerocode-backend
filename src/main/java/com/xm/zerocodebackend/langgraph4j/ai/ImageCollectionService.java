@@ -1,10 +1,8 @@
 package com.xm.zerocodebackend.langgraph4j.ai;
 
-import com.xm.zerocodebackend.langgraph4j.model.ImageResource;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 
-import java.util.List;
 
 /**
  * 图片收集服务接口
