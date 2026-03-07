@@ -97,9 +97,16 @@ public class WebScreenshotUtils {
     private static WebDriver initChromeDriver(int width, int height) {
         try {
             // 自动管理 ChromeDriver
-            System.setProperty("wdm.chromeDriverMirrorUrl",
-                    "https://registry.npmmirror.com/binary.html?path=chromedriver");
-            WebDriverManager.chromedriver().useMirror().setup();
+            // 配置系统属性来禁用 Chrome for Testing (CfT) 仓库
+            // 这是 WebDriverManager 6.x 中最可靠的方式
+            System.setProperty("wdm.chromeDriverVersion", "LATEST");
+            System.setProperty("wdm.disableChromeDriverMirror", "true");
+
+            // 清除缓存并设置驱动
+            WebDriverManager.chromedriver()
+                    .clearDriverCache()
+                    .setup();
+
             // 配置 Chrome 选项
             ChromeOptions options = new ChromeOptions();
             // 无头模式

@@ -17,6 +17,7 @@ server:
     session:
       cookie:
         max-age: 2592000
+  max-http-request-header-size: 65536
 # springdoc-openapi
 springdoc:
   group-configs:

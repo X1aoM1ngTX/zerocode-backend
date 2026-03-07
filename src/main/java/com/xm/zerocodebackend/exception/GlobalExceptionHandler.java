@@ -60,12 +60,21 @@ public class GlobalExceptionHandler {
         }
         HttpServletRequest request = attributes.getRequest();
         HttpServletResponse response = attributes.getResponse();
+        // 检查响应对象是否可用
+        if (response == null) {
+            return false;
+        }
         // 判断是否是SSE请求（通过Accept头或URL路径）
         String accept = request.getHeader("Accept");
         String uri = request.getRequestURI();
         if ((accept != null && accept.contains("text/event-stream")) ||
             uri.contains("/chat/gen/code")) {
             try {
+                // 检查响应是否已经提交
+                if (response.isCommitted()) {
+                    log.warn("SSE response already committed, cannot send error event. errorCode: {}, errorMessage: {}", errorCode, errorMessage);
+                    return true;
+                }
                 // 设置SSE响应头
                 response.setContentType("text/event-stream");
                 response.setCharacterEncoding("UTF-8");
@@ -90,6 +99,10 @@ public class GlobalExceptionHandler {
             } catch (IOException ioException) {
                 log.error("Failed to write SSE error response", ioException);
                 // 即使写入失败，也表示这是SSE请求
+                return true;
+            } catch (IllegalStateException illegalStateException) {
+                // 处理 getOutputStream() 已被调用的情况
+                log.error("SSE error handling failed due to response state: {}", illegalStateException.getMessage());
                 return true;
             }
         }
