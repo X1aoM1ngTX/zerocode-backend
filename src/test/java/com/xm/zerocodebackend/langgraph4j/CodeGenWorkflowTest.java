@@ -1,6 +1,6 @@
-package com.xm.zerocodebackend.langgraph4j;
+package com.xm.vexorbackend.langgraph4j;
 
-import com.xm.zerocodebackend.langgraph4j.state.WorkflowContext;
+import com.xm.vexorbackend.langgraph4j.state.WorkflowContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

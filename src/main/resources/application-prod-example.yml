@@ -23,13 +23,13 @@ spring:
         shutdown-timeout: 100ms
 
 xm:
-  zerocode:
+  vexor:
     salt: anything-you-like # please change it in production
 
 # 生产环境关闭日志
 mybatis-flex:
   configuration:
-    log-impl: ''
+    log-impl: ""
 
 # 接口文档配置
 knife4j:

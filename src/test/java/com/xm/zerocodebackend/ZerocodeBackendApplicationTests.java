@@ -1,10 +1,10 @@
-package com.xm.zerocodebackend;
+package com.xm.vexorbackend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ZerocodeBackendApplicationTests {
+class VexorBackendApplicationTests {
 
     @Test
     void contextLoads() {

@@ -1,4 +1,4 @@
-package com.xm.zerocodebackend.langgraph4j.ai;
+package com.xm.vexorbackend.langgraph4j.ai;
 
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;

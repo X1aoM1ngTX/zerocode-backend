@@ -1,9 +1,9 @@
-package com.xm.zerocodebackend.ai;
+package com.xm.vexorbackend.ai;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.xm.zerocodebackend.model.enums.CodeGenTypeEnum;
+import com.xm.vexorbackend.model.enums.CodeGenTypeEnum;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;

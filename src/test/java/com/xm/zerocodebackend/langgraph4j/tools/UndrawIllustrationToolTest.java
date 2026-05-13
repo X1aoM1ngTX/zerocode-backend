@@ -1,7 +1,7 @@
-package com.xm.zerocodebackend.langgraph4j.tools;
+package com.xm.vexorbackend.langgraph4j.tools;
 
-import com.xm.zerocodebackend.langgraph4j.model.ImageResource;
-import com.xm.zerocodebackend.langgraph4j.model.enums.ImageCategoryEnum;
+import com.xm.vexorbackend.langgraph4j.model.ImageResource;
+import com.xm.vexorbackend.langgraph4j.model.enums.ImageCategoryEnum;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,8 +28,7 @@ class UndrawIllustrationToolTest {
         assertNotNull(firstIllustration.getUrl());
         assertTrue(firstIllustration.getUrl().startsWith("http"));
         System.out.println("搜索到 " + illustrations.size() + " 张插画");
-        illustrations.forEach(illustration ->
-                System.out.println("插画: " + illustration.getDescription() + " - " + illustration.getUrl())
-        );
+        illustrations.forEach(illustration -> System.out
+                .println("插画: " + illustration.getDescription() + " - " + illustration.getUrl()));
     }
 }

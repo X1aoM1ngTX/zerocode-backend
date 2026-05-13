@@ -1,6 +1,6 @@
-package com.xm.zerocodebackend.core;
+package com.xm.vexorbackend.core;
 
-import com.xm.zerocodebackend.model.enums.CodeGenTypeEnum;
+import com.xm.vexorbackend.model.enums.CodeGenTypeEnum;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
-package com.xm.zerocodebackend.langgraph4j.tools;
+package com.xm.vexorbackend.langgraph4j.tools;
 
-import com.xm.zerocodebackend.langgraph4j.model.ImageResource;
+import com.xm.vexorbackend.langgraph4j.model.ImageResource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 

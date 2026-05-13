@@ -1,8 +1,8 @@
-package com.xm.zerocodebackend.image;
+package com.xm.vexorbackend.image;
 
-import com.xm.zerocodebackend.model.dto.image.ImageGenerateRequest;
-import com.xm.zerocodebackend.model.dto.image.ImageGenerateResponse;
-import com.xm.zerocodebackend.service.ZImageTurboService;
+import com.xm.vexorbackend.model.dto.image.ImageGenerateRequest;
+import com.xm.vexorbackend.model.dto.image.ImageGenerateResponse;
+import com.xm.vexorbackend.service.ZImageTurboService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

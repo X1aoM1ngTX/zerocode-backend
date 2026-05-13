@@ -1,7 +1,7 @@
-package com.xm.zerocodebackend.core;
+package com.xm.vexorbackend.core;
 
-import com.xm.zerocodebackend.ai.model.HtmlCodeResult;
-import com.xm.zerocodebackend.ai.model.MultiFileCodeResult;
+import com.xm.vexorbackend.ai.model.HtmlCodeResult;
+import com.xm.vexorbackend.ai.model.MultiFileCodeResult;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

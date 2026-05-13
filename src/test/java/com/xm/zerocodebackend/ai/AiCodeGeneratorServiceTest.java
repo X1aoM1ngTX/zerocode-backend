@@ -1,12 +1,12 @@
-package com.xm.zerocodebackend.ai;
+package com.xm.vexorbackend.ai;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.xm.zerocodebackend.ai.model.HtmlCodeResult;
-import com.xm.zerocodebackend.ai.model.MultiFileCodeResult;
-import com.xm.zerocodebackend.model.enums.CodeGenTypeEnum;
+import com.xm.vexorbackend.ai.model.HtmlCodeResult;
+import com.xm.vexorbackend.ai.model.MultiFileCodeResult;
+import com.xm.vexorbackend.model.enums.CodeGenTypeEnum;
 
 import dev.langchain4j.service.TokenStream;
 import jakarta.annotation.Resource;

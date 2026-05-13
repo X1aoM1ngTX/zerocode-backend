@@ -2,6 +2,6 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.xm.zerocodebackend.gen_result.mapper.ChatHistoryMapper">
+<mapper namespace="com.xm.vexorbackend.gen_result.mapper.ChatHistoryMapper">
 
 </mapper>

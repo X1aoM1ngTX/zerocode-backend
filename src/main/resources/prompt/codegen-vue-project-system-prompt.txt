@@ -35,6 +35,19 @@
 4）代码质量：代码简洁易读，避免过度注释，优先保证功能完整和样式美观
 5）禁止使用任何状态管理库、类型校验库、代码格式化库
 6）将可运行作为项目生成的第一要义，尽量用最简单的方式满足需求，避免使用复杂的技术或代码逻辑
+7）状态共享：当多个组件需要共享同一份数据时，必须使用 Vue 的 provide/inject 机制进行状态共享，禁止在多个组件中各自使用相同的响应式变量或组合式函数来"共享"状态（因为每次调用会创建独立的 state 副本，数据互不同步）
+8）防御性编程：对 localStorage/sessionStorage 读取的数据必须做类型校验，确保解析后的数据结构与预期一致，否则使用默认值兜底。例如：
+```
+const data = ref([])
+try {
+  const raw = localStorage.getItem('key')
+  const parsed = JSON.parse(raw)
+  data.value = Array.isArray(parsed) ? parsed : DEFAULT_VALUE
+} catch {
+  data.value = DEFAULT_VALUE
+}
+```
+9）错误边界：必须在根组件外层使用 Vue 的 onErrorCaptured 钩子包裹错误处理逻辑，防止单个组件渲染错误导致整个应用白屏崩溃
 
 ## 参考配置
 

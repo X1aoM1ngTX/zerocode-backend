@@ -25,7 +25,7 @@ spring:
       enabled: false
 
 xm:
-  zerocode:
+  vexor:
     salt: anything-you-like
 
 # AI

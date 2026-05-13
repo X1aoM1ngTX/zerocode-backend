@@ -1,6 +1,6 @@
 spring:
   application:
-    name: zerocode-backend
+    name: vexor-backend
     # session 配置
   session:
     store-type: redis
@@ -21,9 +21,9 @@ server:
 # springdoc-openapi
 springdoc:
   group-configs:
-    - group: 'default'
-      paths-to-match: '/**'
-      packages-to-scan: com.xm.zerocodebackend.controller
+    - group: "default"
+      paths-to-match: "/**"
+      packages-to-scan: com.xm.vexorbackend.controller
 
 # knife4j
 knife4j:

@@ -1,7 +1,7 @@
-package com.xm.zerocodebackend.langgraph4j.tools;
+package com.xm.vexorbackend.langgraph4j.tools;
 
-import com.xm.zerocodebackend.langgraph4j.model.ImageResource;
-import com.xm.zerocodebackend.langgraph4j.model.enums.ImageCategoryEnum;
+import com.xm.vexorbackend.langgraph4j.model.ImageResource;
+import com.xm.vexorbackend.langgraph4j.model.enums.ImageCategoryEnum;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,8 +26,6 @@ class LogoGeneratorToolTest {
         assertEquals(ImageCategoryEnum.LOGO, firstLogo.getCategory());
         assertNotNull(firstLogo.getDescription());
         assertNotNull(firstLogo.getUrl());
-        logos.forEach(logo ->
-                System.out.println("Logo: " + logo.getDescription() + " - " + logo.getUrl())
-        );
+        logos.forEach(logo -> System.out.println("Logo: " + logo.getDescription() + " - " + logo.getUrl()));
     }
 }

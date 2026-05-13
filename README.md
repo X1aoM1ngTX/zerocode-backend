@@ -1,6 +1,6 @@
-# ZeroCode Backend
+# Vexor Backend
 
-ZeroCode 后端项目，基于 Spring Boot 3 构建的现代化 Java 后端服务，集成 AI 代码生成功能，为零代码开发平台提供强大的 API 支撑。
+Vexor 后端项目，基于 Spring Boot 3 构建的现代化 Java 后端服务，集成 AI 代码生成功能，为零代码开发平台提供强大的 API 支撑。
 
 ## 技术栈
 
@@ -22,7 +22,7 @@ ZeroCode 后端项目，基于 Spring Boot 3 构建的现代化 Java 后端服�
 ## 项目结构
 
 ```
-src/main/java/com/xm/zerocodebackend/
+src/main/java/com/xm/vexorbackend/
 ├── ai/                  # AI 代码生成模块
 │   ├── model/           # AI 相关模型
 │   │   ├── message/     # 消息模型
@@ -110,24 +110,28 @@ src/main/java/com/xm/zerocodebackend/
 │       └── UserServiceImpl.java
 ├── utils/               # 工具类
 │   └── WebScreenshotUtils.java  # 网页截图工具
-└── ZerocodeBackendApplication.java  # 应用程序入口
+└── VexorBackendApplication.java  # 应用程序入口
 ```
 
 ## 快速开始
 
 ### 环境要求
+
 - Java 21+
 - MySQL 8.0+
 - Redis 6.0+
 - Maven 3.6+
 
 ### 数据库配置
+
 1. 创建数据库：
+
 ```sql
-CREATE DATABASE zerocode CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE vexor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 2. 执行 SQL 脚本：
+
 ```bash
 # 位于 src/main/resources/sql/create_user.sql
 # 位于 src/main/resources/sql/create_app.sql
@@ -135,11 +139,12 @@ CREATE DATABASE zerocode CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 3. 修改配置文件 `src/main/resources/application.yml` 中的数据库连接信息：
+
 ```yaml
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/zerocode
+    url: jdbc:mysql://localhost:3306/vexor
     username: your_username
     password: your_password
   # Redis 配置
@@ -153,27 +158,33 @@ spring:
   # Session 配置
   session:
     store-type: redis
-    timeout: 2592000  # 30 天过期
+    timeout: 2592000 # 30 天过期
 ```
 
 ### 启动项目
+
 1. 使用 Maven Wrapper：
+
 ```bash
 ./mvnw spring-boot:run
 ```
 
 2. 或使用本地 Maven：
+
 ```bash
 mvn spring-boot:run
 ```
 
 3. 访问 API 文档：
+
 ```
 http://localhost:8123/api/doc.html
 ```
 
 ### 环境变量配置
+
 在 `src/main/resources/application.yml` 中配置以下必要的环境变量：
+
 - OpenAI API Key (用于 AI 代码生成)
 - 腾讯云 COS 配置 (用于文件存储)
 - 自定义盐值 (用于密码加密)
@@ -181,13 +192,16 @@ http://localhost:8123/api/doc.html
 ## API 文档
 
 项目集成了 Knife4j，提供了交互式的 API 文档。启动项目后访问：
+
 - API 文档: http://localhost:8123/api/doc.html
 - OpenAPI 规范: http://localhost:8123/api/v3/api-docs
 
 ## 核心功能
 
 ### 1. AI 代码生成
+
 项目集成了 LangChain4j，支持多种类型的代码生成：
+
 - **HTML 代码生成**: 根据描述生成 HTML 页面
 - **多文件代码生成**: 生成完整的项目结构，支持 Vue 项目
 - **流式响应**: 支持实时流式输出，提升用户体验
@@ -195,24 +209,29 @@ http://localhost:8123/api/doc.html
 - **智能解析**: 自动解析 AI 生成的代码并保存为文件
 
 ### 2. 用户管理
+
 - 用户注册、登录、权限管理
 - 支持管理员和普通用户角色
 - JWT 身份验证和授权
 - 基于注解的权限控制
 
 ### 3. 应用管理
+
 - 创建、编辑、删除应用
 - 应用部署和发布
 - 应用版本管理
 - 应用状态跟踪
 
 ### 4. 聊天历史
+
 - 保存用户与 AI 的对话历史
 - 支持分页查询
 - 消息类型分类（用户/系统）
 
 ### 5. 权限控制
+
 项目实现了基于注解的权限控制：
+
 ```java
 @AuthCheck(mustRole = UserRoleEnum.ADMIN)
 public Result<UserVO> getUserById(@PathVariable long id) {
@@ -221,38 +240,49 @@ public Result<UserVO> getUserById(@PathVariable long id) {
 ```
 
 ### 6. 统一响应格式
+
 所有 API 响应都采用统一格式：
+
 ```json
 {
-    "code": 0,
-    "data": {},
-    "message": "操作成功"
+  "code": 0,
+  "data": {},
+  "message": "操作成功"
 }
 ```
 
 ### 7. 全局异常处理
+
 通过 `@ControllerAdvice` 实现全局异常处理，统一返回错误信息。
 
 ### 8. 代码生成
+
 使用 MyBatis-Flex 代码生成器快速生成实体和 Mapper：
+
 ```java
 // 运行 MyBatisCodeGenerator
 ```
 
 ### 9. 网页截图
+
 集成 Selenium，支持网页截图功能：
+
 - 自动化浏览器控制
 - 高质量截图输出
 - 支持多种浏览器
 
 ### 10. 云存储
+
 集成腾讯云 COS，支持文件存储和管理：
+
 - 文件上传下载
 - 安全访问控制
 - 高可用性存储
 
 ### 11. 项目下载
+
 支持将生成的项目打包下载：
+
 - ZIP 格式打包
 - 包含完整项目结构
 - 支持多种项目类型
@@ -260,6 +290,7 @@ public Result<UserVO> getUserById(@PathVariable long id) {
 ## 开发指南
 
 ### 添加新功能
+
 1. 在 `model/entity` 中创建实体类
 2. 在 `mapper` 中创建 Mapper 接口
 3. 在 `service` 中创建服务接口和实现
@@ -267,6 +298,7 @@ public Result<UserVO> getUserById(@PathVariable long id) {
 5. 在 `model/dto` 和 `model/vo` 中创建传输对象
 
 ### 权限注解使用
+
 ```java
 @AuthCheck(mustRole = UserRoleEnum.ADMIN)  // 需要管理员权限
 @AuthCheck(mustRole = UserRoleEnum.USER)    // 需要用户权限
@@ -274,6 +306,7 @@ public Result<UserVO> getUserById(@PathVariable long id) {
 ```
 
 ### 异常处理
+
 ```java
 // 抛出业务异常
 throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数错误");
@@ -285,6 +318,7 @@ ThrowUtils.throwIf(condition, ErrorCode.PARAMS_ERROR);
 ## 配置说明
 
 ### application.yml 主要配置项
+
 - `spring.datasource`: 数据库连接配置
 - `spring.data.redis`: Redis 连接配置
 - `spring.session`: Session 存储配置
@@ -292,13 +326,15 @@ ThrowUtils.throwIf(condition, ErrorCode.PARAMS_ERROR);
 - `server.servlet.context-path`: API 路径前缀 (默认: /api)
 - `springdoc`: OpenAPI 文档配置
 - `knife4j`: Knife4j 配置
-- `xm.zerocode.salt`: 自定义盐值
+- `xm.vexor.salt`: 自定义盐值
 
 ### AI 配置
+
 - `langchain4j.openai`: OpenAI API 配置
 - `langchain4j.community.redis`: Redis 聊天记忆配置
 
 ### 腾讯云 COS 配置
+
 - `cos.region`: COS 地域
 - `cos.secret-id`: 访问密钥 ID
 - `cos.secret-key`: 访问密钥
@@ -307,19 +343,22 @@ ThrowUtils.throwIf(condition, ErrorCode.PARAMS_ERROR);
 ## 部署
 
 ### 打包
+
 ```bash
 ./mvnw clean package
 ```
 
 ### 运行
+
 ```bash
-java -jar target/zerocode-backend-0.0.1-SNAPSHOT.jar
+java -jar target/vexor-backend-0.0.1-SNAPSHOT.jar
 ```
 
 ### Docker 部署
+
 ```dockerfile
 FROM openjdk:21-jdk-slim
-COPY target/zerocode-backend-0.0.1-SNAPSHOT.jar app.jar
+COPY target/vexor-backend-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8123
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
@@ -327,6 +366,7 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 ## 测试
 
 运行单元测试：
+
 ```bash
 ./mvnw test
 ```
@@ -334,6 +374,7 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 ## API 接口说明
 
 ### 用户相关接口
+
 - `POST /api/user/register` - 用户注册
 - `POST /api/user/login` - 用户登录
 - `GET /api/user/get/login` - 获取当前登录用户
@@ -342,6 +383,7 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 - `DELETE /api/user/delete` - 删除用户（管理员）
 
 ### 应用相关接口
+
 - `POST /api/app/add` - 创建应用
 - `GET /api/app/get/{id}` - 获取应用详情
 - `GET /api/app/list/page` - 分页获取应用列表
@@ -350,11 +392,13 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 - `GET /api/app/download/{id}` - 下载应用代码
 
 ### AI 代码生成接口
+
 - `POST /api/app/chat` - AI 对话生成代码（流式）
 - `POST /api/app/generate/html` - 生成 HTML 代码
 - `POST /api/app/generate/multi-file` - 生成多文件项目
 
 ### 聊天历史接口
+
 - `GET /api/chat-history/list/page` - 获取聊天历史列表
 - `GET /api/chat-history/get/{appId}` - 获取应用聊天历史
 - `DELETE /api/chat-history/delete` - 删除聊天历史
@@ -362,22 +406,26 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 ## 常见问题
 
 ### 数据库连接失败
+
 - 检查数据库服务是否启动
 - 确认连接配置正确
 - 检查防火墙设置
 - 确认数据库字符集为 utf8mb4
 
 ### AI 代码生成失败
+
 - 检查 OpenAI API Key 是否配置正确
 - 确认网络连接正常
 - 检查 API 使用额度是否充足
 
 ### 文件上传失败
+
 - 检查腾讯云 COS 配置是否正确
 - 确认存储桶权限设置
 - 检查文件大小限制
 
 ### API 文档无法访问
+
 - 确认项目启动成功
 - 检查端口是否被占用
 - 访问正确的 URL 路径

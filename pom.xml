@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.xm</groupId>
-    <artifactId>zerocode-backend</artifactId>
+    <artifactId>vexor-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>zerocode-backend</name>
-    <description>zerocode-backend</description>
+    <name>vexor-backend</name>
+    <description>vexor-backend</description>
     <url/>
     <licenses>
         <license/>
