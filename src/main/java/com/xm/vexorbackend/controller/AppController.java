@@ -40,9 +40,13 @@ import com.xm.vexorbackend.model.dto.app.AppDeployRequest;
 import com.xm.vexorbackend.model.dto.app.AppQueryRequest;
 import com.xm.vexorbackend.model.dto.app.AppUpdateRequest;
 import com.xm.vexorbackend.model.dto.prompt.PromptOptimizeRequest;
+import com.xm.vexorbackend.ai.model.message.AppGenerationMessage;
 import com.xm.vexorbackend.model.entity.App;
 import com.xm.vexorbackend.model.entity.User;
+import com.xm.vexorbackend.model.vo.AppFileContentVO;
+import com.xm.vexorbackend.model.vo.AppFileNodeVO;
 import com.xm.vexorbackend.model.vo.AppVO;
+import com.xm.vexorbackend.service.AppFileService;
 import com.xm.vexorbackend.service.AppService;
 import com.xm.vexorbackend.ai.PromptOptimizerService;
 import com.xm.vexorbackend.service.ProjectDownloadService;
@@ -68,6 +72,9 @@ public class AppController {
 
     @Resource
     private AppService appService;
+
+    @Resource
+    private AppFileService appFileService;
 
     @Resource
     private UserService userService;
@@ -364,6 +371,65 @@ public class AppController {
                 .event("done")
                 .data("")
                 .build()));
+    }
+
+    /**
+     * 应用聊天生成代码（事件流 SSE v2）
+     * 
+     * @param appId   应用 ID
+     * @param message 用户消息
+     * @param request 请求对象
+     * @return 生成结果流（包含事件类型和数据，前端可根据事件类型区分不同的处理逻辑）
+     */
+    @GetMapping(value = "/chat/gen/code/v2", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @RateLimit(limitType = RateLimitType.USER, rate = 5, rateInterval = 60, message = "请勿频繁请求，请稍后再试")
+    @Operation(summary = "应用聊天生成代码（事件流 SSE v2）", description = "用户与应用聊天生成代码，返回结构化事件流")
+    public Flux<ServerSentEvent<String>> chatToGenCodeV2(@RequestParam Long appId,
+            @RequestParam String message,
+            HttpServletRequest request) {
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 无效", "应用 ID 错误");
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空", "用户消息不能为空");
+        User loginUser = userService.getLoginUser(request);
+        Flux<AppGenerationMessage> eventFlux = appService.chatToGenCodeV2(appId, message, loginUser);
+        return eventFlux.map(event -> ServerSentEvent.<String>builder()
+                .event(event.getType())
+                .data(JSONUtil.toJsonStr(event))
+                .build())
+                .concatWith(Mono.just(ServerSentEvent.<String>builder()
+                        .event("done")
+                        .data(JSONUtil.toJsonStr(Map.of("type", "done", "appId", appId)))
+                        .build()));
+    }
+
+    /**
+     * 获取应用文件树
+     * 
+     * @param appId   应用 ID
+     * @param request 请求对象
+     * @return 应用文件树
+     */
+    @GetMapping("/{appId}/files")
+    @Operation(summary = "获取应用文件树", description = "获取应用生成代码目录的文件树")
+    public BaseResponse<List<AppFileNodeVO>> listAppFiles(@PathVariable Long appId, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        return ResultUtils.success(appFileService.listFileTree(appId, loginUser));
+    }
+
+    /**
+     * 获取应用文件内容
+     * 
+     * @param appId   应用 ID
+     * @param path    文件路径（相对于应用生成代码目录的路径）
+     * @param request 请求对象
+     * @return 文件内容
+     */
+    @GetMapping("/{appId}/files/content")
+    @Operation(summary = "获取应用文件内容", description = "获取应用生成代码目录中的某个文件内容")
+    public BaseResponse<AppFileContentVO> getAppFileContent(@PathVariable Long appId,
+            @RequestParam String path,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        return ResultUtils.success(appFileService.getFileContent(appId, path, loginUser));
     }
 
     /**

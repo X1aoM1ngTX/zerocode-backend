@@ -9,6 +9,7 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.xm.vexorbackend.ai.AiCodeGenTypeRoutingService;
 import com.xm.vexorbackend.ai.AiCodeGenTypeRoutingServiceFactory;
+import com.xm.vexorbackend.ai.model.message.AppGenerationMessage;
 import com.xm.vexorbackend.constant.AppConstant;
 import com.xm.vexorbackend.core.AiCodeGeneratorFacade;
 import com.xm.vexorbackend.core.builder.VueProjectBuilder;
@@ -223,6 +224,73 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 6. 调用 AI 生成代码（流式）
         Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
         return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
+    }
+
+    /**
+     * 生成代码（事件流）
+     * @param appId     应用 ID
+     * @param message   用户消息
+     * @param loginUser 登录用户
+     * @return Flux<AppGenerationMessage> 代码生成事件流
+     */
+    @Override
+    public Flux<AppGenerationMessage> chatToGenCodeV2(Long appId, String message, User loginUser) {
+        // 1. 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 错误", "应用 ID 不能为空且必须大于 0");
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
+        // 2. 查询应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在", "应用不存在");
+        // 3. 验证用户是否有权限访问该应用，仅本人可以生成代码
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH, "无权限访问该应用", "无权限，仅本人可访问该应用生成代码");
+        }
+        // 4. 获取应用的代码生成类型
+        String codeGenTypeStr = app.getCodeGenType();
+        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenTypeStr);
+        ThrowUtils.throwIf(codeGenTypeEnum == null, ErrorCode.UNSUPPORTED_TYPE, "不支持的代码生成类型", "不支持的代码生成类型");
+        // 5. 添加用户消息到对话历史
+        boolean addUserMessageSuccess = chatHistoryService.addChatMessage(appId, message,
+                ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
+        ThrowUtils.throwIf(!addUserMessageSuccess, ErrorCode.OPERATION_ERROR, "添加用户消息到对话历史失败", "添加用户消息到对话历史失败");
+        // 6. 调用 AI 生成代码（事件流）
+        StringBuilder aiResponseBuilder = new StringBuilder();
+        Flux<AppGenerationMessage> eventStream = aiCodeGeneratorFacade.generateAndSaveCodeEventStream(message,
+                codeGenTypeEnum, appId);
+        return eventStream
+                .doOnNext(event -> collectNonCodeMessage(event, aiResponseBuilder))
+                .doOnComplete(() -> {
+                    String aiResponse = aiResponseBuilder.toString();
+                    if (StrUtil.isNotBlank(aiResponse)) {
+                        chatHistoryService.addChatMessage(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(),
+                                loginUser.getId());
+                    }
+                })
+                .doOnError(error -> {
+                    String errorMessage = "AI回复失败: " + error.getMessage();
+                    chatHistoryService.addChatMessage(appId, errorMessage, ChatHistoryMessageTypeEnum.AI.getValue(),
+                            loginUser.getId());
+                });
+    }
+
+    /**
+     * 从事件流中收集非代码文件内容（文本响应、工具提示等），用于保存为 AI 对话历史
+     */
+    private void collectNonCodeMessage(AppGenerationMessage event, StringBuilder aiResponseBuilder) {
+        if (event == null || StrUtil.isBlank(event.getType())) {
+            return;
+        }
+        switch (event.getType()) {
+            case "assistant_message" -> aiResponseBuilder.append(event.getContent());
+            case "tool_call", "build_status", "preview_ready" -> {
+                String message = StrUtil.blankToDefault(event.getMessage(), event.getContent());
+                if (StrUtil.isNotBlank(message)) {
+                    aiResponseBuilder.append("\n\n").append(message).append("\n");
+                }
+            }
+            default -> {
+            }
+        }
     }
 
     /**

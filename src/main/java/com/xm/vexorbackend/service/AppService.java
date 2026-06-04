@@ -6,6 +6,7 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import com.xm.vexorbackend.model.dto.app.AppAddRequest;
 import com.xm.vexorbackend.model.dto.app.AppQueryRequest;
+import com.xm.vexorbackend.ai.model.message.AppGenerationMessage;
 import com.xm.vexorbackend.model.entity.App;
 import com.xm.vexorbackend.model.entity.User;
 import com.xm.vexorbackend.model.vo.AppVO;
@@ -52,6 +53,15 @@ public interface AppService extends IService<App> {
      * @return 流式响应
      */
     Flux<String> chatToGenCode(Long appId, String massage, User loginUser);
+
+    /**
+     * 对话生成代码（事件流 v2）
+     * @param appId     应用ID
+     * @param message   用户消息
+     * @param loginUser 登录用户
+     * @return 流式响应
+     */
+    Flux<AppGenerationMessage> chatToGenCodeV2(Long appId, String message, User loginUser);
 
     /**
      * 部署应用

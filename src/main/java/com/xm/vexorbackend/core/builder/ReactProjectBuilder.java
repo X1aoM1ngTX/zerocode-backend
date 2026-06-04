@@ -5,8 +5,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Component;
 
-import cn.hutool.core.util.RuntimeUtil;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -74,7 +72,7 @@ public class ReactProjectBuilder {
     private boolean executeNpmInstall(File projectDir) {
         log.info("执行 npm install...");
         String command = String.format("%s install", buildCommand("npm"));
-        return executeCommand(projectDir, command, 300); // 5分钟超时
+        return executeCommand(projectDir, command, 600); // 10分钟超时
     }
 
     /**
@@ -83,7 +81,7 @@ public class ReactProjectBuilder {
     private boolean executeNpmBuild(File projectDir) {
         log.info("执行 npm run build...");
         String command = String.format("%s run build", buildCommand("npm"));
-        return executeCommand(projectDir, command, 180); // 3分钟超时
+        return executeCommand(projectDir, command, 600); // 10分钟超时
     }
 
     /**
@@ -114,11 +112,11 @@ public class ReactProjectBuilder {
     private boolean executeCommand(File workingDir, String command, int timeoutSeconds) {
         try {
             log.info("在目录 {} 中执行命令: {}", workingDir.getAbsolutePath(), command);
-            Process process = RuntimeUtil.exec(
-                    null,
-                    workingDir,
-                    command.split("\\s+") // 命令分割为数组
-            );
+            ProcessBuilder pb = new ProcessBuilder(command.split("\\s+"));
+            pb.directory(workingDir);
+            // 限制 Node.js 进程内存，防止构建时吃满系统内存
+            pb.environment().put("NODE_OPTIONS", "--max-old-space-size=512");
+            Process process = pb.start();
             // 等待进程完成，设置超时
             boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
             if (!finished) {
