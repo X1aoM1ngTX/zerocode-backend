@@ -27,7 +27,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public BaseResponse<?> businessExceptionHandler(BusinessException e) {
-        log.error("BusinessException", e);
+        log.warn("BusinessException: code={}, message={}, description={}, request={}",
+                e.getCode(), e.getMessage(), e.getDescription(), getCurrentRequestInfo());
         // 尝试处理 SSE 请求
         if (handleSseError(e.getCode(), e.getMessage())) {
             return null;
@@ -44,6 +45,23 @@ public class GlobalExceptionHandler {
             return null;
         }
         return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "系统错误", "");
+    }
+
+    /**
+     * 获取当前请求的简要信息，避免业务异常日志输出完整堆栈
+     *
+     * @return 请求方法和路径
+     */
+    private String getCurrentRequestInfo() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return "unknown";
+        }
+        HttpServletRequest request = attributes.getRequest();
+        if (request == null) {
+            return "unknown";
+        }
+        return request.getMethod() + " " + request.getRequestURI();
     }
 
     /**

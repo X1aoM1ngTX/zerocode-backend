@@ -9,6 +9,7 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.xm.vexorbackend.ai.AiCodeGenTypeRoutingService;
 import com.xm.vexorbackend.ai.AiCodeGenTypeRoutingServiceFactory;
+import com.xm.vexorbackend.ai.AppNameGeneratorService;
 import com.xm.vexorbackend.ai.model.message.AppGenerationMessage;
 import com.xm.vexorbackend.constant.AppConstant;
 import com.xm.vexorbackend.core.AiCodeGeneratorFacade;
@@ -79,6 +80,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory;
 
+    @Resource
+    private AppNameGeneratorService appNameGeneratorService;
+
     @Value("${code.deploy-host:http://localhost}")
     private String deployHost;
 
@@ -98,8 +102,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         App app = new App();
         BeanUtil.copyProperties(appAddRequest, app);
         app.setUserId(loginUser.getId());
-        // 应用名称暂时为 initPrompt 前 12 位
-        app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
+        // 使用 AI 根据需求自动生成应用名称，失败时回退到截断后的初始 prompt
+        app.setAppName(generateAppName(initPrompt));
         // 使用 AI 智能选择代码生成类型（多例模式）
         AiCodeGenTypeRoutingService routingService = aiCodeGenTypeRoutingServiceFactory
                 .createAiCodeGenTypeRoutingService();
@@ -110,6 +114,47 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "应用创建失败", "创建应用时数据库操作失败");
         log.info("应用创建成功，ID: {}, 类型: {}", app.getId(), selectedCodeGenType.getValue());
         return app.getId();
+    }
+
+    /**
+     * 根据初始 prompt 生成应用名称
+     *
+     * @param initPrompt 初始 prompt
+     * @return 应用名称
+     */
+    private String generateAppName(String initPrompt) {
+        String fallbackName = initPrompt.substring(0, Math.min(initPrompt.length(), 12));
+        try {
+            String appName = appNameGeneratorService.generateAppName(initPrompt);
+            appName = sanitizeAppName(appName);
+            if (StrUtil.isNotBlank(appName)) {
+                return appName;
+            }
+        } catch (Exception e) {
+            log.warn("AI 生成应用名称失败，使用默认名称，原因: {}", e.getMessage());
+        }
+        return fallbackName;
+    }
+
+    /**
+     * 清洗 AI 返回的应用名称，防止模型输出解释或多余格式
+     *
+     * @param appName AI 返回的应用名称
+     * @return 清洗后的应用名称
+     */
+    private String sanitizeAppName(String appName) {
+        if (StrUtil.isBlank(appName)) {
+            return null;
+        }
+        String cleanedName = appName
+                .replaceAll("[`\"'“”‘’：:，,。.!！?？#*\\[\\]【】（）(){}]", "")
+                .trim();
+        String[] lines = cleanedName.split("\\R");
+        cleanedName = lines.length > 0 ? lines[0].trim() : cleanedName;
+        if (cleanedName.length() > 12) {
+            cleanedName = cleanedName.substring(0, 12);
+        }
+        return cleanedName;
     }
 
     /**
@@ -274,22 +319,15 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     }
 
     /**
-     * 从事件流中收集非代码文件内容（文本响应、工具提示等），用于保存为 AI 对话历史
+     * 从事件流中收集 AI 正文内容，用于保存为 AI 对话历史。
+     * 工具调用、构建状态和预览状态只用于前端实时进度展示，不写入历史消息。
      */
     private void collectNonCodeMessage(AppGenerationMessage event, StringBuilder aiResponseBuilder) {
         if (event == null || StrUtil.isBlank(event.getType())) {
             return;
         }
-        switch (event.getType()) {
-            case "assistant_message" -> aiResponseBuilder.append(event.getContent());
-            case "tool_call", "build_status", "preview_ready" -> {
-                String message = StrUtil.blankToDefault(event.getMessage(), event.getContent());
-                if (StrUtil.isNotBlank(message)) {
-                    aiResponseBuilder.append("\n\n").append(message).append("\n");
-                }
-            }
-            default -> {
-            }
+        if ("assistant_message".equals(event.getType()) && StrUtil.isNotBlank(event.getContent())) {
+            aiResponseBuilder.append(event.getContent());
         }
     }
 

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Logback 日志配置
+    - 由 start.sh 启动时直接写 app.log（相对启动目录，即项目根目录）
+    - 每满 8MB 自动切割归档为 app-yyyy-MM-dd.N.log，保证单个文件不超过 8MB
+      （便于宝塔面板等限制单文件大小 < 10MB 的工具在线查看）
+    - 历史归档保留 30 天，总量上限 1GB，超出自动清理
+-->
+<configuration>
+    <!-- 当前正在写入的日志文件（相对启动目录） -->
+    <property name="LOG_FILE" value="app.log"/>
+    <!-- 单个日志文件最大体积：达到后自动切割 -->
+    <property name="LOG_MAX_FILE_SIZE" value="8MB"/>
+    <!-- 历史归档保留天数 -->
+    <property name="LOG_MAX_HISTORY" value="30"/>
+    <!-- 所有归档日志的总大小上限 -->
+    <property name="LOG_TOTAL_SIZE_CAP" value="1GB"/>
+    <!-- 日志输出格式 -->
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- 控制台输出（nohup 后由 start.sh 重定向，仅供启动期排查） -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 滚动文件输出：按大小（8MB）切割，同时按天归档 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 归档命名：app-2026-07-05.0.log，其中 %i 是当天按大小切割的序号 -->
+            <fileNamePattern>app-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>
